@@ -213,6 +213,12 @@ export function createAudio(): {
       if (event.type === "state" || event.type === "caption") return;
       foregroundUntil = context.currentTime + 0.4;
       switch (event.type) {
+        case "bounce":
+          // A rubbery low pluck bends into a bright launch whistle.
+          tone({ frequency: 125, bend: 480, duration: 0.24, amplitude: 0.075, modulation: 2.2 });
+          tone({ frequency: 720, bend: 1080, delay: 0.055, duration: 0.19, amplitude: 0.035 });
+          air(900, 0.12, 0.045);
+          break;
         case "stage":
           air(1500 + event.levelIndex * 250, 0.45, 0.16);
           break;

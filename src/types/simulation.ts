@@ -14,6 +14,8 @@ export type PlayerState = Rect & {
 export type CheckpointState = { id: string; levelIndex: number; spawn: Point };
 export type GamePhase =
   "title" | "playing" | "paused" | "transition" | "respawning" | "recruiting" | "ended";
+/** Missing map entries are intact; expired collapsed entries wait for clear reform space. */
+export type CrumbleState = { phase: "armed" | "collapsed"; remaining: number };
 export type SimulationState = {
   phase: GamePhase;
   levelIndex: number;
@@ -21,6 +23,8 @@ export type SimulationState = {
   checkpoint: CheckpointState;
   collectedIds: Set<string>;
   activatedTriggerIds: Set<string>;
+  /** Simulation-owned transient timers, cleared on retry, stage change, and Replay. */
+  crumbleStates: Map<string, CrumbleState>;
   receptorBound: boolean;
   hreBound: boolean;
   recruitmentCount: number;
@@ -38,6 +42,7 @@ export type GameEvent =
   | { type: "collect"; total: number }
   | { type: "checkpoint"; id: string }
   | { type: "death"; total: number }
+  | { type: "bounce"; platformId: string }
   | { type: "bound" }
   | { type: "hre" }
   | { type: "recruitment"; count: number; success: boolean }

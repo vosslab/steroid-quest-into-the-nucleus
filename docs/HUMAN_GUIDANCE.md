@@ -19,3 +19,10 @@ origin belongs there too. Rules: [REPO_STYLE.md](REPO_STYLE.md).
 - Exaggerate the steroid's visible movement during binding.
 - Give the game frame more style using the CSS creative expert skill.
 - Make the cell more crowded with organelles, and add gel or tunnel movement alongside platforms.
+- Make the journey fun, chaotic, and surprising: I want to wonder what strange thing comes next.
+  Use exaggerated cellular interactions, varied movement, secrets, and memorable events while
+  keeping controls readable and recovery quick.
+- Escalate through collapsing passages, moving organelles, pinball, currents, launchers, rotating
+  chambers, squeezes, shafts, chase pressure, and temporary traversal rules.
+- Give each of the six stages a signature moment. Include rare optional vesicle express routes,
+  organelle escapes, ribosome cascades, and absurd shortcuts.

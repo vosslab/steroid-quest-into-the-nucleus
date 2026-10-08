@@ -9,11 +9,15 @@ import {
   steroid,
 } from "./drawing";
 import { cellularDebris } from "./debris";
+import { bindingWave, cellularCurrent, launchPad, launchRipple } from "./kinetic_art";
 import { platformRect } from "./physics";
+import { movingBody, orbitTrack, ribosomeBridge, transcriptionPayoff } from "./surprise_art";
 import type { RenderSnapshot, Renderer } from "./types/render";
+import type { GameEvent } from "./types/simulation";
 
 const VIEW_WIDTH = 960;
 const VIEW_HEIGHT = 540;
+type RenderEffects = { launchTimes: Map<string, number>; recruitedAt: number[] };
 
 /** Canvas draws snapshots; simulation alone controls progression and checkpoints. */
 export function createRenderer(canvas: HTMLCanvasElement): Renderer {
@@ -23,10 +27,38 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
   let bindingStarted: number | undefined;
   let bindingInitialFlex = 0;
   let lastFreeFlex = 0;
+  let lastElapsed = 0;
+  const pending: GameEvent[] = [];
+  const effects: RenderEffects = { launchTimes: new Map(), recruitedAt: [] };
   return {
+    play(event): void {
+      if (disposed) return;
+      if (event.type === "stage") {
+        pending.length = 0;
+        effects.launchTimes.clear();
+        effects.recruitedAt.length = 0;
+      } else if (event.type === "bounce" || (event.type === "recruitment" && event.success)) {
+        // Frame catch-up can emit several contacts; keep transient artwork bounded.
+        if (pending.length === 16) pending.shift();
+        pending.push(event);
+      }
+    },
     draw(snapshot: RenderSnapshot): void {
       if (disposed) return;
       const { state, reducedMotion } = snapshot;
+      if (state.elapsed < lastElapsed) {
+        effects.launchTimes.clear();
+        effects.recruitedAt.length = 0;
+      }
+      lastElapsed = state.elapsed;
+      for (const event of pending) {
+        if (event.type === "bounce") effects.launchTimes.set(event.platformId, state.elapsed);
+        if (event.type === "recruitment") effects.recruitedAt[event.count - 1] = state.elapsed;
+      }
+      pending.length = 0;
+      for (const [id, started] of effects.launchTimes) {
+        if (state.elapsed - started > 0.8) effects.launchTimes.delete(id);
+      }
       if (!state.receptorBound) {
         // Replay clears the render-only transition without touching session authority.
         bindingStarted = undefined;
@@ -44,10 +76,13 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
       const flex = state.receptorBound
         ? bindingInitialFlex * (1 - settling) + boundFlex * settling
         : lastFreeFlex;
-      drawWorld(ctx, snapshot, settling, flex);
+      drawWorld(ctx, snapshot, settling, flex, effects);
     },
     dispose(): void {
       disposed = true;
+      pending.length = 0;
+      effects.launchTimes.clear();
+      effects.recruitedAt.length = 0;
     },
   };
 }
@@ -57,6 +92,7 @@ function drawWorld(
   snapshot: RenderSnapshot,
   settling: number,
   flex: number,
+  effects: RenderEffects,
 ): void {
   const { level, state, reducedMotion } = snapshot;
   const { player } = state;
@@ -82,6 +118,10 @@ function drawWorld(
   }
   ctx.save();
   ctx.translate(-cameraX, -cameraY);
+  for (const zone of level.flowZones ?? []) {
+    if (zone.x + zone.width < cameraX || zone.x > cameraX + VIEW_WIDTH) continue;
+    cellularCurrent(ctx, zone, time);
+  }
   ctx.globalAlpha = 0.8;
   for (const d of level.decorations) {
     if (d.kind === "lipid" || d.kind === "pore") continue;
@@ -91,58 +131,38 @@ function drawWorld(
   ctx.globalAlpha = 1;
   for (const p of level.platforms) {
     const r = platformRect(p, state.levelTime);
+    if (
+      p.motion?.kind === "orbit" &&
+      p.x + p.width + p.motion.radiusX >= cameraX &&
+      p.x - p.motion.radiusX <= cameraX + VIEW_WIDTH
+    )
+      orbitTrack(ctx, p, r);
     if (r.x + r.width < cameraX || r.x > cameraX + VIEW_WIDTH) continue;
-    // Moving molecular bodies use the same translated rectangle as the collision top.
-    // Decorative motion preferences never freeze a body while its platform keeps moving.
-    if (p.motion && level.id === "dna") {
-      decoration(
-        ctx,
-        {
-          kind: "nucleosome",
-          x: r.x + r.width / 2 - 65,
-          y: r.y + r.height,
-          width: 130,
-          height: 80,
-        },
-        time,
-      );
-      dna(ctx, { x: r.x - 8, y: r.y + r.height + 28, width: r.width + 16, height: 36 });
+    if (p.crumble) {
+      ribosomeBridge(ctx, p, r, state.crumbleStates.get(p.id), reducedMotion);
+      continue;
     }
-    if (p.motion && level.id === "cytoplasm") {
-      decoration(
-        ctx,
-        {
-          kind: "vesicle",
-          x: r.x - 8,
-          y: r.y + 3,
-          width: r.width + 16,
-          height: 70,
-        },
-        time,
-      );
+    // Body motion remains tied to the collision top when decorative motion is reduced.
+    if (p.motion) {
+      movingBody(ctx, r, level.id, time);
+      if (level.id === "dna")
+        dna(ctx, { x: r.x - 8, y: r.y + r.height + 28, width: r.width + 16, height: 36 });
     }
-    if (p.material && p.kind === "solid") {
+    const launchTime = effects.launchTimes.get(p.id);
+    const launchAge = launchTime === undefined ? undefined : state.elapsed - launchTime;
+    if (p.kind === "bounce") {
+      launchPad(ctx, p, r, launchAge, reducedMotion);
+      if (launchAge !== undefined && !reducedMotion) launchRipple(ctx, p, r, launchAge);
+    } else if (p.material && p.kind === "solid") {
       organellePlatform(ctx, r, p.material, level.palette.accent);
     } else {
-      const color = p.kind === "bounce" ? "#dc9ad5" : level.palette.foreground;
-      rounded(ctx, r, Math.min(12, r.height / 2), color, "#ffffff25");
+      rounded(ctx, r, Math.min(12, r.height / 2), level.palette.foreground, "#ffffff25");
       rounded(
         ctx,
         { x: r.x + 3, y: r.y, width: Math.max(1, r.width - 6), height: 5 },
         3,
-        p.kind === "bounce" ? "#ffe2fa" : level.palette.accent,
+        level.palette.accent,
       );
-    }
-    if (p.kind === "bounce") {
-      for (let x = r.x + 18; x < r.x + r.width; x += 26) {
-        ctx.beginPath();
-        ctx.moveTo(x - 6, r.y - 6);
-        ctx.lineTo(x, r.y - 13);
-        ctx.lineTo(x + 6, r.y - 6);
-        ctx.strokeStyle = "#ffe2fa";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
     }
     if (p.motion) {
       ctx.beginPath();
@@ -237,12 +257,13 @@ function drawWorld(
       label(ctx, "RESPONSE ELEMENT", trigger.x + trigger.width / 2, trigger.y - 13, "#bbf8ed", 13);
     }
   }
-  if (state.hreBound && level.id === "transcription") drawTranscription(ctx, snapshot);
+  if (state.hreBound && level.id === "transcription") drawTranscription(ctx, snapshot, effects);
   const centerX = player.x + player.width / 2;
   const centerY = player.y + player.height / 2;
   ctx.save();
   if (state.phase === "respawning") ctx.globalAlpha = 0.35;
   if (state.receptorBound) {
+    if (!reducedMotion) bindingWave(ctx, centerX, centerY, settling);
     receptor(ctx, centerX, centerY, 24, true, settling, flex);
     if (!player.grounded && player.airJumpsRemaining > 0) {
       ctx.beginPath();
@@ -300,43 +321,48 @@ function drawWorld(
   ctx.restore();
 }
 
-function drawTranscription(ctx: CanvasRenderingContext2D, { state, level }: RenderSnapshot): void {
+function drawTranscription(
+  ctx: CanvasRenderingContext2D,
+  { state, level, reducedMotion }: RenderSnapshot,
+  effects: RenderEffects,
+): void {
   const trigger = level.triggers.find(
     (item) => item.kind === "transcription" || item.kind === "hre",
   );
   if (!trigger) return;
   const x = trigger.x + trigger.width / 2;
-  const y = state.player.y + state.player.height + 24;
+  const y = trigger.y + trigger.height + 24;
   const promoterX = x + 100;
   dna(ctx, { x: x - 45, y, width: 550, height: 32 });
   label(ctx, "PROMOTER", promoterX, y + 66, "#e3d4ff", 13);
+  const colors = ["#b5a3eb", "#6db7cd", "#e9ba77"];
   for (let i = 0; i < state.recruitmentCount; i++) {
-    const mx = promoterX + i * 32;
+    const age = state.elapsed - (effects.recruitedAt[i] ?? state.elapsed - 1);
+    const arrival = reducedMotion ? 1 : Math.min(1, Math.max(0, age / 0.45));
+    const eased = 1 - (1 - arrival) ** 3;
+    const mx = promoterX + i * 32 + (1 - eased) * (170 + i * 45);
+    const my = y - 40 - (i % 2) * 8 - (1 - eased) * (130 + i * 22);
+    if (arrival < 1) {
+      ctx.beginPath();
+      ctx.moveTo(mx + 20, my - 15);
+      ctx.quadraticCurveTo(mx + 65, my - 50, mx + 100, my - 58);
+      ctx.strokeStyle = `${colors[i] ?? "#b5a3eb"}55`;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
     rounded(
       ctx,
-      { x: mx - 16, y: y - 40 - (i % 2) * 8, width: 29, height: 32 },
+      { x: mx - 16, y: my, width: 29, height: 32 },
       9,
-      ["#b5a3eb", "#6db7cd", "#e9ba77"][i] ?? "#b5a3eb",
+      colors[i] ?? "#b5a3eb",
       "#f6e8ff",
     );
   }
   if (state.recruitmentCount === 3) {
-    const progress = Math.max(0, Math.min(1, 1 - state.phaseRemaining / 4));
+    const progress = reducedMotion ? 1 : Math.max(0, Math.min(1, 1 - state.phaseRemaining / 4));
     const px = promoterX + progress * 330;
     rounded(ctx, { x: px - 24, y: y - 29, width: 58, height: 47 }, 20, "#d2b8ed", "#fff0ff");
     label(ctx, "RNA POLYMERASE", px, y - 44, "#ecd9ff", 12);
-    ctx.beginPath();
-    const length = progress * 210;
-    for (let i = 0; i <= length; i += 3) {
-      const rx = px - i * 0.7;
-      const ry = y - 24 - i * 0.35 + Math.sin(i / 8) * 5;
-      if (i === 0) ctx.moveTo(rx, ry);
-      else ctx.lineTo(rx, ry);
-    }
-    ctx.strokeStyle = "#ffd87e";
-    ctx.lineWidth = 4;
-    ctx.stroke();
-    if (progress > 0.3)
-      label(ctx, "RNA TRANSCRIPT", px - length * 0.45, y - length * 0.35 - 40, "#ffe7a8", 12);
+    transcriptionPayoff(ctx, px, y, progress, reducedMotion ? 0 : state.elapsed, reducedMotion);
   }
 }

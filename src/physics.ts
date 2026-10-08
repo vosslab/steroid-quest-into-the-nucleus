@@ -9,8 +9,14 @@ export function platformRect(platform: Platform, time: number): Rect {
     height: platform.height,
   };
   if (platform.motion) {
-    const { axis, distance, period, phase = 0 } = platform.motion;
-    rect[axis] += Math.sin((time / period + phase) * Math.PI * 2) * distance;
+    const motion = platform.motion;
+    const angle = (time / motion.period + (motion.phase ?? 0)) * Math.PI * 2;
+    if (motion.kind === "orbit") {
+      rect.x += Math.cos(angle) * motion.radiusX;
+      rect.y += Math.sin(angle) * motion.radiusY;
+    } else {
+      rect[motion.axis] += Math.sin(angle) * motion.distance;
+    }
   }
   return rect;
 }

@@ -1,5 +1,5 @@
 import type { LevelDefinition } from "./level";
-import type { SimulationState } from "./simulation";
+import type { GameEvent, SimulationState } from "./simulation";
 export type RenderSnapshot = {
   state: Readonly<SimulationState>;
   level: LevelDefinition;
@@ -7,4 +7,8 @@ export type RenderSnapshot = {
   canvasHeight: number;
   reducedMotion: boolean;
 };
-export type Renderer = { draw(snapshot: RenderSnapshot): void; dispose(): void };
+export type Renderer = {
+  play(event: GameEvent): void;
+  draw(snapshot: RenderSnapshot): void;
+  dispose(): void;
+};

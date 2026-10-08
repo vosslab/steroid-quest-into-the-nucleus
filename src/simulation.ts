@@ -47,6 +47,7 @@ export function createSimulation(
   const restoreCheckpoint = (): void => {
     state.levelIndex = state.checkpoint.levelIndex;
     state.player = createPlayer(state.checkpoint.spawn);
+    state.crumbleStates.clear();
     jumpCutEligible = false;
     state.player.airJumpsRemaining = state.receptorBound ? 1 : 0;
     state.phase = "playing";
@@ -65,6 +66,7 @@ export function createSimulation(
     state.levelIndex += 1;
     const level = currentLevel();
     state.levelTime = 0;
+    state.crumbleStates.clear();
     state.player = createPlayer(level.spawn);
     jumpCutEligible = false;
     state.player.airJumpsRemaining = state.receptorBound ? 1 : 0;
@@ -76,12 +78,35 @@ export function createSimulation(
     state.phase = "playing";
     announceLevel();
   };
+  const updateCrumble = (level: LevelDefinition, dt: number): void => {
+    for (const platform of level.platforms) {
+      const crumble = state.crumbleStates.get(platform.id);
+      if (!platform.crumble || !crumble) continue;
+      crumble.remaining = Math.max(0, crumble.remaining - dt);
+      if (crumble.remaining > 0) continue;
+      if (crumble.phase === "armed") {
+        crumble.phase = "collapsed";
+        crumble.remaining = platform.crumble.reformAfter;
+        if (state.player.standingOnId === platform.id) {
+          state.player.standingOnId = undefined;
+          state.player.grounded = false;
+        }
+      } else if (!overlaps(state.player, platformRect(platform, state.levelTime))) {
+        state.crumbleStates.delete(platform.id);
+      }
+    }
+  };
   const move = (input: InputFrame, dt: number): void => {
     const level = currentLevel();
     const player = state.player;
     const previousTime = state.levelTime;
     state.levelTime += dt;
-    const standing = level.platforms.find((platform) => platform.id === player.standingOnId);
+    updateCrumble(level, dt);
+    const standing = level.platforms.find(
+      (platform) =>
+        platform.id === player.standingOnId &&
+        state.crumbleStates.get(platform.id)?.phase !== "collapsed",
+    );
     if (standing) {
       const before = platformRect(standing, previousTime);
       const after = platformRect(standing, state.levelTime);
@@ -95,11 +120,15 @@ export function createSimulation(
       ? JUMP_BUFFER_TIME
       : Math.max(0, player.jumpBufferRemaining - dt);
     const direction = Number(input.right) - Number(input.left);
-    player.vx = approach(
-      player.vx,
-      direction * MAX_SPEED,
-      (direction ? MOVE_ACCELERATION : player.grounded ? GROUND_FRICTION : AIR_FRICTION) * dt,
-    );
+    // Steering with an automatic boost lets it coast; opposing input still brakes quickly.
+    const movementAcceleration = direction
+      ? direction * player.vx > MAX_SPEED
+        ? AIR_FRICTION
+        : MOVE_ACCELERATION
+      : player.grounded
+        ? GROUND_FRICTION
+        : AIR_FRICTION;
+    player.vx = approach(player.vx, direction * MAX_SPEED, movementAcceleration * dt);
     if (direction) player.facing = direction < 0 ? -1 : 1;
     if (
       player.jumpBufferRemaining > 0 &&
@@ -117,10 +146,31 @@ export function createSimulation(
       player.vy = -JUMP_SPEED * 0.45;
       jumpCutEligible = false;
     }
-    player.vy = Math.min(1000, player.vy + GRAVITY * dt);
+    let flowX = 0;
+    let flowY = 0;
+    let gravityScale = 1;
+    let drag = 0;
+    let inFlow = false;
+    for (const zone of level.flowZones ?? []) {
+      if (!overlaps(player, zone)) continue;
+      flowX += zone.acceleration.x;
+      flowY += zone.acceleration.y;
+      gravityScale = Math.min(gravityScale, zone.gravityScale ?? 1);
+      drag += zone.drag ?? 0;
+      inFlow = true;
+    }
+    const damping = Math.exp(-drag * dt);
+    player.vx = (player.vx + flowX * dt) * damping;
+    player.vy = Math.min(1000, (player.vy + (GRAVITY * gravityScale + flowY) * dt) * damping);
+    if (inFlow) {
+      // Sum fields before limiting speed, so overlapping currents have no ordering preference.
+      player.vx = Math.max(-BOUNCE_SPEED, Math.min(BOUNCE_SPEED, player.vx));
+      player.vy = Math.max(-BOUNCE_SPEED, player.vy);
+    }
     const previousX = player.x;
     player.x = Math.max(0, Math.min(level.width - player.width, player.x + player.vx * dt));
     for (const platform of level.platforms) {
+      if (state.crumbleStates.get(platform.id)?.phase === "collapsed") continue;
       if (platform.kind === "oneway") continue;
       const rect = platformRect(platform, state.levelTime);
       if (!overlaps(player, rect)) continue;
@@ -137,15 +187,24 @@ export function createSimulation(
     player.grounded = false;
     player.standingOnId = undefined;
     for (const platform of level.platforms) {
+      if (state.crumbleStates.get(platform.id)?.phase === "collapsed") continue;
       const rect = platformRect(platform, state.levelTime);
       if (!overlaps(player, rect)) continue;
       if (player.vy >= 0 && previousY + player.height <= rect.y + 3) {
         player.y = rect.y - player.height;
+        if (platform.crumble && !state.crumbleStates.has(platform.id)) {
+          state.crumbleStates.set(platform.id, {
+            phase: "armed",
+            remaining: platform.crumble.delay,
+          });
+        }
         if (platform.kind === "bounce") {
-          player.vy = -BOUNCE_SPEED;
+          if (platform.launch) player.vx = platform.launch.x;
+          player.vy = platform.launch?.y ?? -BOUNCE_SPEED;
           jumpCutEligible = false;
           player.coyoteRemaining = 0;
           player.airJumpsRemaining = state.receptorBound ? 1 : 0;
+          onEvent({ type: "bounce", platformId: platform.id });
         } else {
           player.vy = 0;
           jumpCutEligible = false;
@@ -286,6 +345,7 @@ export function createSimulation(
         state.phase === "recruiting" ||
         (state.phase === "paused" && suspendedPhase === "recruiting")
       ) {
+        state.crumbleStates.clear();
         state.phase = "recruiting";
         if (state.recruitmentCount < 3) state.recruitmentClock = 0;
         notify();

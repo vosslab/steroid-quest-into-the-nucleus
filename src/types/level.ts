@@ -4,11 +4,43 @@ export type Point = { x: number; y: number };
 export type Rect = Point & { width: number; height: number };
 /** Visual treatment for a collision rectangle. Material never changes simulation geometry. */
 export type PlatformMaterial = "membrane" | "mitochondrion" | "reticulum" | "gel";
+/** Phase is measured in turns; periods are seconds. Legacy motion remains sinusoidal. */
+export type LinearMotion = {
+  kind?: "linear";
+  axis: "x" | "y";
+  distance: number;
+  period: number;
+  phase?: number;
+};
+/** The authored platform x/y is the orbit center for its top-left collision corner. */
+export type OrbitMotion = {
+  kind: "orbit";
+  radiusX: number;
+  radiusY: number;
+  period: number;
+  phase?: number;
+};
+export type PlatformMotion = LinearMotion | OrbitMotion;
+/** First top contact arms collapse; positive durations are seconds of simulation time. */
+export type CrumbleConfig = { delay: number; reformAfter: number };
 export type Platform = Rect & {
   id: string;
   kind: "solid" | "oneway" | "bounce";
   material?: PlatformMaterial;
-  motion?: { axis: "x" | "y"; distance: number; period: number; phase?: number };
+  /** Bounce top contact sets this velocity in pixels/second; author a negative y for lift. */
+  launch?: Point;
+  motion?: PlatformMotion;
+  /** Collapsed platforms are absent from collision; reform waits for player clearance. */
+  crumble?: CrumbleConfig;
+};
+/** A current adds acceleration in pixels/second squared only while the player overlaps it. */
+export type FlowZone = Rect & {
+  id: string;
+  acceleration: Point;
+  /** Nonnegative gravity multiplier; overlapping fields use the minimum, defaulting to 1. */
+  gravityScale?: number;
+  /** Nonnegative damping per second; overlaps add, then velocity uses exp(-drag * dt). */
+  drag?: number;
 };
 export type Hazard = Rect & { id: string; kind: "enzyme" | "acid" | "spike" };
 export type Collectible = Point & { id: string };
@@ -34,6 +66,7 @@ export type LevelDefinition = {
   spawn: Point;
   palette: { background: string; foreground: string; accent: string };
   platforms: readonly Platform[];
+  flowZones?: readonly FlowZone[];
   hazards: readonly Hazard[];
   checkpoints: readonly CheckpointDefinition[];
   collectibles: readonly Collectible[];

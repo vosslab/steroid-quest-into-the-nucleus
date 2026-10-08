@@ -28,6 +28,7 @@ export function createGameState(levels: readonly LevelDefinition[]): SimulationS
     checkpoint: { id: "start", levelIndex: 0, spawn: { ...first.spawn } },
     collectedIds: new Set<string>(),
     activatedTriggerIds: new Set<string>(),
+    crumbleStates: new Map(),
     receptorBound: false,
     hreBound: false,
     recruitmentCount: 0,

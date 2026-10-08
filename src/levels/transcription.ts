@@ -3,7 +3,7 @@ import type { LevelDefinition } from "../types/level";
 /** A single camera view keeps the docked complex, promoter, and emerging RNA together. */
 export const TRANSCRIPTION_LEVEL: LevelDefinition = {
   id: "transcription",
-  name: "Recruit the transcription machinery",
+  name: "Assemble the machinery. Release the RNA.",
   objective: "Stay bound. Press jump in the bright timing window three times to recruit machinery.",
   caption:
     "The complex remains at the response element while machinery assembles at a nearby promoter.",
@@ -25,7 +25,8 @@ export const TRANSCRIPTION_LEVEL: LevelDefinition = {
       y: 335,
       width: 68,
       height: 55,
-      caption: "Press jump in the bright window. Missed attempts repeat immediately.",
+      caption:
+        "Three bright-window jumps assemble the machinery. Watch the RNA emerge! Misses repeat immediately.",
     },
   ],
   decorations: [

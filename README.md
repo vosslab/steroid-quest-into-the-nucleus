@@ -17,15 +17,18 @@ The journey turns a molecular pathway into six playable challenges:
 
 | Region | Your challenge | What the action shows |
 | --- | --- | --- |
-| Membrane | Roll past proteins and cross the lipid strip | A steroid crosses the bilayer directly |
-| Cytoplasm | Climb cytoskeletal ledges and moving vesicles | A crowded cell separates you from the nucleus |
-| Nuclear envelope | Reach a continuously open pore | This route requires no key or pore-opening action |
-| Receptor | Find a complementary binding pocket | Binding forms an active complex and unlocks an air jump |
-| DNA / HRE | Use the air jump to find a matching response element | The complex recognizes a regulatory DNA region |
-| Transcription | Time three jump-button recruitment actions | Machinery assembles and polymerase produces RNA |
+| Membrane | Cross the lipid strip, then bounce through a membrane pop | A steroid crosses the bilayer directly |
+| Cytoplasm | Squeeze through gel, launch through giant pinball, and try a crumbling bridge | A crowded cell separates you from the nucleus |
+| Nuclear envelope | Climb through pore suction, then explore a low-gravity loft | This route requires no key or pore-opening action |
+| Receptor | Bind, float through low gravity, and ride orbiting vesicle moons | Binding forms an active complex and unlocks an air jump |
+| DNA / HRE | Ride nucleosome orbits, cross crumbling chromatin, and launch toward the HRE | The complex recognizes a regulatory DNA region |
+| Transcription | Time three recruitment actions and watch RNA emerge | Machinery assembles and polymerase produces RNA |
 
 The red steroid stays visible inside the active complex. Optional fragments reward exploration.
-Cellular debris becomes denser as you progress, with new obstacles along the authored routes.
+Gel squeezes open into giant organelle pinball, contact-armed platforms crumble, currents sweep
+through ER folds, and orbiting ledges circle above safe floors. Low-gravity fields change jump
+arcs. Occasional upper caches and a high DNA shortcut reward detours with a route back. These
+discoveries are authored and deterministic; clear collision lips and recovery floors mark the route.
 Retries are unlimited; checkpoints, collected fragments, and completed milestones survive a
 retry. Missed recruitment attempts repeat immediately. Short objectives and milestone captions
 support the action; reading never gates progress.
@@ -70,9 +73,11 @@ response element (HRE) while machinery assembles at the nearby promoter and tran
 The steroid and binding pocket visibly adjust together. Their exaggerated flexibility is a
 schematic illustration that preserves the four-ring scaffold, rather than a chemical conversion.
 
-A practiced automated route completed through real controls in 4:53, including two deaths.
-The 8-12 minute first-play target still needs a human playthrough; this timing does not
-establish human enjoyment.
+The revised campaign completes in about 1:52 on a practiced automated keyboard route, including
+all six stages, one deliberate checkpoint death, optional cache recovery, RNA production,
+ending, and Replay. Human first-play duration and enjoyment remain unmeasured. See
+[docs/active_plans/reports/surprise_walkthrough.md](docs/active_plans/reports/surprise_walkthrough.md)
+for the current route, rendered captures, and exact coverage.
 
 ## Build and verify
 
@@ -86,6 +91,7 @@ The build produces the GitHub Pages-ready `dist/` artifact. Remote publication i
 step. The game uses TypeScript, SolidJS, and Canvas 2D, with procedural illustrations.
 
 - [docs/SOLID_MODEL.md](docs/SOLID_MODEL.md): simulation authority, UI lifecycle, and biological limits.
+- [docs/LEVEL_DESIGN.md](docs/LEVEL_DESIGN.md): typed section authoring, movement variety, and recovery.
 - [docs/PLAYWRIGHT_USAGE.md](docs/PLAYWRIGHT_USAGE.md): browser setup, tests, and capture usage.
 - [tests/TESTS_TYPESCRIPT_README.md](tests/TESTS_TYPESCRIPT_README.md): TypeScript verification tools.
 - [docs/CHANGELOG.md](docs/CHANGELOG.md): implementation history and validation notes.

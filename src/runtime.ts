@@ -14,11 +14,12 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas 2D is required to play Steroid Quest.");
   const audio = createAudio();
+  const renderer = createRenderer(canvas);
   const simulation = createSimulation(levels, (event) => {
     audio.play(event);
+    renderer.play(event);
     onEvent(event);
   });
-  const renderer = createRenderer(canvas);
   let disposed = false;
   let animationFrame = 0;
   let lastTime: number | undefined;
