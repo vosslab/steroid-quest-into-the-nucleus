@@ -11,3 +11,4 @@ origin belongs there too. Rules: [REPO_STYLE.md](REPO_STYLE.md).
 - Make durable changes in starter-repo-template; consumer copies are vendored.
 - A temporary, easily removable wrapper is acceptable for the Graphify crash.
   Make the edited node count match the expected normalized count.
+- Implement the approved plan through implementation and verification.

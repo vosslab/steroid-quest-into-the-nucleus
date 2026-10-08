@@ -62,14 +62,7 @@ mkdir -p dist
 
 npx tsc --noEmit -p tsconfig.json
 
-npx esbuild "$ENTRY" \
-	--bundle \
-	--format=esm \
-	--target=es2020 \
-	--platform=browser \
-	--minify \
-	--sourcemap \
-	--outfile=dist/main.js
+node pipeline/build.mjs "$ENTRY"
 
 cp src/index.html dist/index.html
 cp src/style.css dist/style.css
