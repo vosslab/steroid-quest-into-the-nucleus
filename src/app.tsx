@@ -335,6 +335,11 @@ export function App(): JSX.Element {
             obstacles are game abstractions. The open pore is this level's route; steroids do not
             universally require pores for nuclear entry, and receptor locations vary.
           </p>
+          <p>
+            Binding involves small shape adjustments in the steroid and receptor. The moving
+            four-ring scaffold and settling pocket are schematic views of flexibility; they do not
+            show a chemical conversion or predict receptor specificity.
+          </p>
         </details>
       </div>
     </main>

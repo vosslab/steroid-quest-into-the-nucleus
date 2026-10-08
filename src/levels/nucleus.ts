@@ -1,4 +1,10 @@
-import type { CheckpointDefinition, Decoration, LevelDefinition, Platform } from "../types/level";
+import type {
+  CheckpointDefinition,
+  Decoration,
+  Hazard,
+  LevelDefinition,
+  Platform,
+} from "../types/level";
 
 type Shelf = { x: number; y: number; width: number; moving?: number };
 
@@ -123,6 +129,58 @@ function checkpoints(
   });
 }
 
+// Low, jumpable protein hurdles occupy the middle of selected stationary terraces.
+// Indices deliberately avoid the receptor pocket, air-jump tutorial, moving shelves, and HRE.
+function terraceObstacles(
+  stage: "receptor" | "dna",
+  route: readonly Shelf[],
+  indices: readonly number[],
+): { blocks: Platform[]; enzymes: Hazard[] } {
+  const blocks: Platform[] = [];
+  const enzymes: Hazard[] = [];
+  for (const index of indices) {
+    const shelf = route[index];
+    if (!shelf || shelf.moving || shelf.width < 380) {
+      throw new Error("Protein hurdles need a broad stationary terrace.");
+    }
+    const x = shelf.x + shelf.width / 2;
+    // Enzymes follow climbs: their landing arc arrives before the center of the terrace.
+    // Descents can land farther across a shelf, so those terraces carry harmless solid blocks.
+    const previous = route[index - 1];
+    if (previous && previous.y - shelf.y >= 60) {
+      enzymes.push({
+        id: `${stage}-shelf-${index}-enzyme`,
+        kind: "enzyme",
+        x,
+        y: shelf.y - 24,
+        width: 40,
+        height: 24,
+      });
+    } else {
+      blocks.push({
+        id: `${stage}-shelf-${index}-debris`,
+        kind: "solid",
+        x,
+        y: shelf.y - 40,
+        width: 60,
+        height: 40,
+      });
+    }
+  }
+  return { blocks, enzymes };
+}
+
+const receptorObstacles = terraceObstacles(
+  "receptor",
+  receptorRoute,
+  [0, 3, 6, 10, 13, 14, 19, 21, 22, 25],
+);
+const dnaObstacles = terraceObstacles(
+  "dna",
+  dnaRoute,
+  [0, 3, 5, 8, 10, 12, 14, 16, 18, 20, 24, 26, 28, 31, 32, 35, 37, 39],
+);
+
 // The renderer attaches a nucleosome and local DNA to each moving platform.
 const chromatin: Decoration[] = dnaRoute.flatMap((shelf, index) =>
   shelf.moving
@@ -148,7 +206,7 @@ const chromatin: Decoration[] = dnaRoute.flatMap((shelf, index) =>
 const receptorLevel: LevelDefinition = {
   id: "receptor",
   name: "Find your receptor",
-  objective: "Explore the nucleoplasm. Fit the steroid into the receptor pocket.",
+  objective: "Explore the nucleoplasm. Bind the steroid to the receptor.",
   caption: "In this pathway, an intracellular receptor binds the steroid in the nucleus.",
   width: 14000,
   height: 900,
@@ -156,10 +214,14 @@ const receptorLevel: LevelDefinition = {
   palette: { background: "#281b43", foreground: "#a78abd", accent: "#f2d591" },
   platforms: [
     ...platforms("receptor", receptorRoute),
+    ...receptorObstacles.blocks,
     { id: "receptor-secret", x: 950, y: 440, width: 110, height: 20, kind: "oneway" },
     { id: "receptor-secret-high", x: 9910, y: 90, width: 110, height: 20, kind: "oneway" },
   ],
-  hazards: [{ id: "receptor-depths", x: 0, y: 815, width: 14000, height: 85, kind: "acid" }],
+  hazards: [
+    { id: "receptor-depths", x: 0, y: 815, width: 14000, height: 85, kind: "acid" },
+    ...receptorObstacles.enzymes,
+  ],
   checkpoints: checkpoints(
     "receptor",
     receptorRoute,
@@ -179,7 +241,7 @@ const receptorLevel: LevelDefinition = {
       y: 623,
       width: 24,
       height: 24,
-      caption: "Bound! The red steroid stays inside the active complex. Jump again in midair.",
+      caption: "Bound! Steroid and receptor adjust their shapes. Jump again in midair.",
     },
     {
       id: "receptor-air-jump",
@@ -223,11 +285,15 @@ const dnaLevel: LevelDefinition = {
   palette: { background: "#16233e", foreground: "#838fcb", accent: "#8ae5de" },
   platforms: [
     ...platforms("dna", dnaRoute),
+    ...dnaObstacles.blocks,
     { id: "dna-secret-a", x: 3300, y: 270, width: 110, height: 20, kind: "oneway" },
     { id: "dna-secret-b", x: 8660, y: 70, width: 120, height: 20, kind: "oneway" },
     { id: "dna-secret-c", x: 18350, y: 70, width: 110, height: 20, kind: "oneway" },
   ],
-  hazards: [{ id: "dna-depths", x: 0, y: 815, width: 26050, height: 85, kind: "acid" }],
+  hazards: [
+    { id: "dna-depths", x: 0, y: 815, width: 26050, height: 85, kind: "acid" },
+    ...dnaObstacles.enzymes,
+  ],
   checkpoints: checkpoints(
     "dna",
     dnaRoute,

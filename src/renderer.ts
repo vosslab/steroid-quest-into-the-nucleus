@@ -1,4 +1,5 @@
 import { decoration, dna, label, motif, receptor, rounded, steroid } from "./drawing";
+import { cellularDebris } from "./debris";
 import { platformRect } from "./physics";
 import type { RenderSnapshot, Renderer } from "./types/render";
 
@@ -10,10 +11,31 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas 2D is required to play Steroid Quest.");
   let disposed = false;
+  let bindingStarted: number | undefined;
+  let bindingInitialFlex = 0;
+  let lastFreeFlex = 0;
   return {
     draw(snapshot: RenderSnapshot): void {
       if (disposed) return;
-      drawWorld(ctx, snapshot);
+      const { state, reducedMotion } = snapshot;
+      if (!state.receptorBound) {
+        // Replay clears the render-only transition without touching session authority.
+        bindingStarted = undefined;
+        lastFreeFlex = reducedMotion ? 0 : Math.sin(state.elapsed * 1.8) * 2.25;
+      } else if (bindingStarted === undefined) {
+        bindingStarted = state.elapsed;
+        bindingInitialFlex = lastFreeFlex;
+      }
+      const progress =
+        bindingStarted === undefined || reducedMotion
+          ? 1
+          : Math.min(1, Math.max(0, (state.elapsed - bindingStarted) / 1.6));
+      const settling = progress * progress * (3 - 2 * progress);
+      const boundFlex = reducedMotion ? 0.65 : 1.65;
+      const flex = state.receptorBound
+        ? bindingInitialFlex * (1 - settling) + boundFlex * settling
+        : lastFreeFlex;
+      drawWorld(ctx, snapshot, settling, flex);
     },
     dispose(): void {
       disposed = true;
@@ -21,11 +43,17 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
   };
 }
 
-function drawWorld(ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot): void {
+function drawWorld(
+  ctx: CanvasRenderingContext2D,
+  snapshot: RenderSnapshot,
+  settling: number,
+  flex: number,
+): void {
   const { level, state, reducedMotion } = snapshot;
   const { player } = state;
   const cameraX = Math.max(0, Math.min(level.width - VIEW_WIDTH, player.x - VIEW_WIDTH * 0.34));
-  const cameraY = Math.max(0, Math.min(level.height - VIEW_HEIGHT, player.y - VIEW_HEIGHT * 0.57));
+  // Air jumps can rise above the authored origin; follow them while keeping the floor clamp.
+  const cameraY = Math.min(Math.max(0, level.height - VIEW_HEIGHT), player.y - VIEW_HEIGHT * 0.57);
   const time = reducedMotion ? 0 : state.levelTime;
   ctx.save();
   const gradient = ctx.createLinearGradient(0, 0, 0, VIEW_HEIGHT);
@@ -33,6 +61,7 @@ function drawWorld(ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot): voi
   gradient.addColorStop(1, "#071420");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+  cellularDebris(ctx, level, cameraX, cameraY, time);
   // Stable seeded-looking particles provide depth without random frame-to-frame noise.
   for (let i = 0; i < 65; i++) {
     const x = (((i * 137.7 - cameraX * 0.22) % 1100) + 1100) % 1100;
@@ -201,7 +230,7 @@ function drawWorld(ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot): voi
   ctx.save();
   if (state.phase === "respawning") ctx.globalAlpha = 0.35;
   if (state.receptorBound) {
-    receptor(ctx, centerX, centerY, 24, true);
+    receptor(ctx, centerX, centerY, 24, true, settling, flex);
     if (!player.grounded && player.airJumpsRemaining > 0) {
       ctx.beginPath();
       ctx.arc(centerX, centerY, 32, 0.15, Math.PI - 0.15);
@@ -209,7 +238,13 @@ function drawWorld(ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot): voi
       ctx.lineWidth = 2;
       ctx.stroke();
     }
-  } else steroid(ctx, centerX, centerY, 1.2);
+  } else {
+    // Exaggerated display motion follows simulation time, so pause freezes it too.
+    // Collision bounds and movement remain the simulation's unchanged rectangle.
+    ctx.translate(centerX, centerY + (reducedMotion ? 0 : Math.sin(state.elapsed * 3.6) * 2.8));
+    ctx.rotate(reducedMotion ? 0 : Math.sin(state.elapsed * 1.8) * 0.18);
+    steroid(ctx, 0, 0, 1.35, flex);
+  }
   ctx.restore();
   ctx.restore();
   // Soft vignette keeps the action readable against dense biological environments.

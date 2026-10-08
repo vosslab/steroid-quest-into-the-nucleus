@@ -1,11 +1,33 @@
 // Built-artifact acceptance: real keys and read-only observations; never mutates game state.
 // Run: node --import tsx tests/playwright/campaign_walkthrough.mjs [preview URL]
 import { chromium } from "playwright";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { CAMPAIGN } from "../../src/levels.ts";
 
 const output = "test-results/campaign";
 await mkdir(output, { recursive: true });
+const hashes = Object.fromEntries(
+  await Promise.all(
+    [
+      "src/levels/cell.ts",
+      "src/levels/nucleus.ts",
+      "src/simulation.ts",
+      "src/runtime.ts",
+      "src/renderer.ts",
+      "src/app.tsx",
+      "dist/main.js",
+      "dist/style.css",
+      "dist/index.html",
+      "tests/playwright/campaign_walkthrough.mjs",
+    ].map(async (file) => [
+      file,
+      createHash("sha256")
+        .update(await readFile(file))
+        .digest("hex"),
+    ]),
+  ),
+);
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1280, height: 850 } });
 await page.addInitScript(() => {
@@ -50,6 +72,7 @@ let previousDeaths = 0;
 let lastLog = 0;
 let finished = false;
 let rnaStarted = 0;
+let bindingObserved = false;
 const capture = async (name) => {
   if (captures.has(name)) return;
   captures.add(name);
@@ -115,6 +138,7 @@ while (Date.now() - started < 600_000) {
     break;
   }
   if (s.phase === "recruiting") {
+    await capture("recruitment-timing");
     await keyRight(false);
     await page.keyboard.up("Space");
     const count = Number(s.recruitmentCount);
@@ -132,9 +156,23 @@ while (Date.now() - started < 600_000) {
   } else if (s.phase === "playing") {
     await keyRight(true);
     const level = CAMPAIGN.find((candidate) => candidate.id === stage);
-    if (s.receptorBound === "true" && stage === "receptor") await capture("binding");
+    if (s.receptorBound === "true" && stage === "receptor" && !bindingObserved) {
+      bindingObserved = true;
+      await keyRight(false);
+      await page.keyboard.up("Space");
+      await capture("binding");
+      await page.waitForTimeout(800);
+      await capture("binding-settling");
+      await page.waitForTimeout(850);
+      await capture("binding-settled");
+      observations.push({ event: "binding", elapsed, x, y });
+      await keyRight(true);
+    }
     if (stage === "membrane" && x > 2450) await capture("bilayer-crossing");
     if (stage === "envelope" && x > 1940 && x < 2210) await capture("open-pore");
+    if (stage === "cytoplasm" && x > 17700 && x < 18200) await capture("filament-garden");
+    if (stage === "dna" && x > 13000 && x < 13500) await capture("moving-nucleosomes");
+    if (stage === "dna" && x > 18800 && x < 19400) await capture("chromatin-fold");
     const hre = level.triggers.find((trigger) => trigger.kind === "hre");
     if (hre && x > hre.x - 210) await capture("hre");
     const now = Date.now();
@@ -148,11 +186,25 @@ while (Date.now() - started < 600_000) {
     } else if (secondJump && now >= jumpStart + 300) await page.keyboard.up("Space");
     if (s.grounded === "true" && now - jumpStart > 180) {
       let shouldJump = false;
+      let useAirJump = s.receptorBound === "true";
+      const standing = level.platforms.find((p) => p.id === s.standingPlatform);
+      const hurdle =
+        standing &&
+        [
+          ...level.platforms.filter((p) => p.id.endsWith("-debris")),
+          ...level.hazards.filter((h) => h.kind === "enzyme"),
+        ].some((p) => Math.abs(p.y + p.height - standing.y) < 5 && x > p.x - 110 && x < p.x - 18);
       if (stage === "membrane") {
         const obstacles = level.platforms.filter((p) => p.id.includes("protein"));
         const hazards = deliberateDeath ? [] : level.hazards;
         shouldJump = [...obstacles, ...hazards].some((p) => x > p.x - 115 && x < p.x - 18);
-      } else if (stage === "cytoplasm" || stage === "envelope") {
+      } else if (stage === "cytoplasm") {
+        const p = level.platforms.find((p) => p.id === s.standingPlatform);
+        const route = level.platforms.filter((platform) =>
+          /^cytoplasm-[a-z_]+-\d+$/.test(platform.id),
+        );
+        if (p && p.id !== route.at(-1)?.id) shouldJump = x + 24 > p.x + p.width - 55;
+      } else if (stage === "envelope") {
         const p = level.platforms.find((p) => p.id === s.standingPlatform);
         if (p && !p.id.includes("finish"))
           shouldJump =
@@ -161,10 +213,14 @@ while (Date.now() - started < 600_000) {
           shouldJump ||= level.hazards.some((h) => x > h.x - 110 && x < h.x - 20);
       } else if (stage === "receptor" || stage === "dna") {
         const p = level.platforms.find((p) => p.id === s.standingPlatform);
-        const route = level.platforms.filter((platform) => platform.id.includes("-shelf-"));
+        const route = level.platforms.filter((platform) => /shelf-\d+$/.test(platform.id));
         if (p && p.id !== route.at(-1)?.id) shouldJump = x > p.x + p.width - 40;
       }
-      if (shouldJump) await jump(s.receptorBound === "true");
+      if (hurdle && !(stage === "membrane" && deliberateDeath)) {
+        shouldJump = true;
+        useAirJump = false;
+      }
+      if (shouldJump) await jump(useAirJump);
     }
   }
   await page.waitForTimeout(20);
@@ -192,12 +248,28 @@ if (finished) {
   if (!(await page.getByLabel(/^0 of \d+ fragments collected$/).isVisible()))
     throw new Error("Visible HUD did not reset after Replay");
   await capture("replay");
+  await page.keyboard.up("Space");
+  await page.keyboard.up("ArrowRight");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await page.getByRole("button", { name: "Start adventure", exact: true }).waitFor();
+  const responsive = await page.evaluate(() => ({
+    viewport: innerWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+    reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
+  }));
+  if (responsive.scrollWidth > responsive.viewport || !responsive.reducedMotion)
+    throw new Error("Small-viewport reduced-motion title acceptance failed");
+  observations.push({ event: "responsive-title", ...responsive });
+  await capture("small-title-reduced-motion");
 }
 await writeFile(
   `${output}/report.json`,
   JSON.stringify(
     {
       finished,
+      hashes,
       sawDeath,
       wallSeconds,
       stages,

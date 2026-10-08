@@ -86,3 +86,35 @@ artifact consumed by the existing preview and browser-test scripts.
 remain separate from remote GitHub Pages publication.
 
 **Owner.** [pipeline/build.mjs](../pipeline/build.mjs) and [README.md](../README.md).
+
+### Authored campaign pacing
+
+**Decision.** Expand cytoplasm, receptor, and DNA routes with distinct authored districts while
+preserving the controller and compact membrane, pore, and transcription milestones.
+
+**Why.** The initial real-controls route finished in roughly two minutes. Longer routes with
+different elevations and recovery shelves provide more play without slowing movement.
+
+**Consequence.** Checkpoints stay on supported safe shelves, and optional branches never gate
+progress. Keep measured expert-route time separate from the unverified 8-12 minute first-play
+target and human enjoyment.
+
+**Owner.** [src/levels/cell.ts](../src/levels/cell.ts),
+[src/levels/nucleus.ts](../src/levels/nucleus.ts), and
+[walkthrough.md](active_plans/reports/walkthrough.md).
+
+### Schematic binding flexibility
+
+**Decision.** Exaggerate schematic steroid and pocket accommodation during binding, preserving the red
+identity and four-ring scaffold. Reduced-motion presentation uses the settled bound shape.
+
+**Why.** A visible change can communicate conformational flexibility while keeping the ligand
+recognizable inside the active complex.
+
+**Consequence.** Treat the depiction as an illustration, not a chemical reaction, quantified
+atomic motion or energy, or a claim that every steroid ligand has equal flexibility. Motion is
+deliberately not scale accurate. The
+supplied paper concerns particular unsaturated steroids; preserve that scope.
+
+**Owner.** [src/drawing.ts](../src/drawing.ts), [src/renderer.ts](../src/renderer.ts), and
+[SOLID_MODEL.md](SOLID_MODEL.md).

@@ -116,24 +116,36 @@ const STEROID_CONTOUR: readonly (readonly [number, number])[] = [
 function ringPath(
   ctx: CanvasRenderingContext2D,
   points: readonly (readonly [number, number])[],
+  flex = 0,
 ): void {
   ctx.beginPath();
   points.forEach(([x, y], index) => {
-    // Center the asymmetrical fused-ring silhouette around its visual midpoint.
-    if (index === 0) ctx.moveTo((x - 4.3) * 0.8, (y + 3.5) * 0.8);
-    else ctx.lineTo((x - 4.3) * 0.8, (y + 3.5) * 0.8);
+    // Apply one coherent schematic projection to every shared ring/pocket vertex.
+    // This preserves fused edges; rings never rotate as independent hinged pieces.
+    const centeredX = x - 4.3;
+    const centeredY = y + 3.5;
+    const projectedX = (centeredX + flex * centeredY * 0.12) * 0.8;
+    const projectedY = (centeredY + flex * ((centeredX * centeredX) / 180 - 1.2)) * 0.8;
+    if (index === 0) ctx.moveTo(projectedX, projectedY);
+    else ctx.lineTo(projectedX, projectedY);
   });
   ctx.closePath();
 }
 
-export function steroid(ctx: CanvasRenderingContext2D, x: number, y: number, scale = 1): void {
+export function steroid(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  scale = 1,
+  flex = 0,
+): void {
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(scale, scale);
   ctx.shadowColor = "#fb5169";
   ctx.shadowBlur = 10;
   for (const [i, ring] of STEROID_RINGS.entries()) {
-    ringPath(ctx, ring);
+    ringPath(ctx, ring, flex);
     ctx.fillStyle = i % 2 ? "#f54e66" : "#ff7380";
     ctx.fill();
     ctx.strokeStyle = "#ffd1ca";
@@ -149,9 +161,13 @@ export function receptor(
   y: number,
   size: number,
   bound: boolean,
+  settling = 1,
+  flex = 0,
 ): void {
   ctx.save();
   ctx.translate(x, y);
+  // The protein and its pocket relax together around the unchanged red scaffold.
+  ctx.scale(1 + (1 - settling) * 0.24, 1 - (1 - settling) * 0.12);
   ctx.beginPath();
   ctx.moveTo(-size, -size * 0.25);
   ctx.bezierCurveTo(-size * 1.4, -size * 1.25, size * 0.2, -size * 1.2, size * 0.75, -size * 0.65);
@@ -164,9 +180,9 @@ export function receptor(
   ctx.stroke();
   ctx.save();
   ctx.translate(0, -size * 0.04);
-  const pocketScale = (size / 23) * 1.12;
+  const pocketScale = (size / 23) * (1.12 + (1 - settling) * 0.24);
   ctx.scale(pocketScale, pocketScale);
-  ringPath(ctx, STEROID_CONTOUR);
+  ringPath(ctx, STEROID_CONTOUR, flex);
   ctx.fillStyle = "#172037";
   ctx.fill();
   ctx.strokeStyle = "#f2dbab";
@@ -174,7 +190,7 @@ export function receptor(
   ctx.stroke();
   ctx.restore();
   motif(ctx, 0, size * 0.5, size * 0.18, "#5adccc");
-  if (bound) steroid(ctx, 0, -size * 0.04, size / 23);
+  if (bound) steroid(ctx, 0, -size * 0.04, size / 23, flex);
   ctx.restore();
 }
 

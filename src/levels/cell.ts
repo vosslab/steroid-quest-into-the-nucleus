@@ -33,6 +33,7 @@ const membrane: LevelDefinition = {
       [1260, 50, 130],
       [1720, 60, 120],
       [2050, 55, 150],
+      [2830, 35, 60],
     ].map(([x = 0, rise = 0, width = 0], i): Platform => ({
       id: `membrane-protein-${i}`,
       x,
@@ -49,6 +50,7 @@ const membrane: LevelDefinition = {
   hazards: [
     { id: "membrane-enzyme-a", x: 660, y: 574, width: 42, height: 26, kind: "enzyme" },
     { id: "membrane-enzyme-b", x: 1580, y: 574, width: 45, height: 26, kind: "enzyme" },
+    { id: "membrane-enzyme-c", x: 2590, y: 578, width: 36, height: 22, kind: "enzyme" },
   ],
   checkpoints: [checkpoint("membrane", 0, 1060, 600), checkpoint("membrane", 1, 2300, 600)],
   collectibles: [
@@ -225,6 +227,16 @@ const cytoplasmItems: Collectible[] = [];
 const cytoplasmDecorations: Decoration[] = [];
 const cytoplasmHazards: Hazard[] = [];
 const cytoplasmCaptions: LevelDefinition["triggers"][number][] = [];
+// Broad authored terraces carry small hurdles; narrow climbs and optional ferries stay clear.
+// Later districts use more of their broad terraces, rather than shrinking safe landings.
+const cytoplasmObstacles: Readonly<Record<string, readonly number[]>> = {
+  entry_filaments: [0, 5, 12],
+  organelle_weave: [0, 3, 9, 12],
+  vesicle_crossing: [0, 5, 13, 15],
+  filament_garden: [0, 6, 9, 12],
+  spring_grove: [0, 3, 5, 8, 10],
+  nuclear_approach: [0, 3, 8, 10, 13],
+};
 let cytoplasmX = 0;
 let lastCheckpointX = -1400;
 
@@ -268,6 +280,30 @@ for (const district of cytoplasmDistricts) {
         width: 240,
         height: 115,
       });
+    }
+    if (cytoplasmObstacles[district.id]?.includes(index)) {
+      // Checkpoint spawn is x + 60. Keeping hurdles after x + 170 preserves recovery room;
+      // every selected shelf leaves at least 100 units beyond the obstacle for the next jump.
+      const obstacleX = x + Math.max(170, width / 2);
+      if (index % 3 === 0 && district.id !== "entry_filaments") {
+        cytoplasmHazards.push({
+          id: `${id}-enzyme`,
+          kind: "enzyme",
+          x: obstacleX,
+          y: floor - 22,
+          width: 36,
+          height: 22,
+        });
+      } else {
+        cytoplasmPlatforms.push({
+          id: `${id}-debris`,
+          kind: "solid",
+          x: obstacleX,
+          y: floor - 35,
+          width: 50,
+          height: 35,
+        });
+      }
     }
     if (district.id === "vesicle_crossing" && [3, 8, 10].includes(index)) {
       // The upper ferry is a shortcut; the complete lower shelf is a stable fallback.

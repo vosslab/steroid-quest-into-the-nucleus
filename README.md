@@ -1,37 +1,71 @@
 # Steroid Quest
 
-A keyboard-controlled molecular arcade adventure for biology learners. Guide a red steroid through a crowded cell, bind an intracellular receptor, recognize a DNA response element, and recruit transcription machinery across six illustrated stages.
+A keyboard-controlled arcade adventure for biology learners. Guide a red steroid through six illustrated cell regions, bind a receptor, and activate gene expression through movement and discovery, with no quiz gates.
 
-## Play locally
+[Play Steroid Quest in your browser](https://vosslab.github.io/steroid-quest-into-the-nucleus/)
 
-Install Node.js and npm, then run from the repository root:
+Choose **Start adventure**, move right, and jump past the first membrane obstacles. Your red
+steroid crosses the lipid bilayer directly. Keep exploring until an RNA transcript emerges and
+**GENE EXPRESSION ACTIVATED** appears.
+
+<!-- screenshots:begin (managed by screenshot-docs) -->
+<!-- screenshots:end -->
+
+## From steroid to RNA
+
+The journey turns a molecular pathway into six playable challenges:
+
+| Region | Your challenge | What the action shows |
+| --- | --- | --- |
+| Membrane | Roll past proteins and cross the lipid strip | A steroid crosses the bilayer directly |
+| Cytoplasm | Climb cytoskeletal ledges and moving vesicles | A crowded cell separates you from the nucleus |
+| Nuclear envelope | Reach a continuously open pore | This route requires no key or pore-opening action |
+| Receptor | Find a complementary binding pocket | Binding forms an active complex and unlocks an air jump |
+| DNA / HRE | Use the air jump to find a matching response element | The complex recognizes a regulatory DNA region |
+| Transcription | Time three jump-button recruitment actions | Machinery assembles and polymerase produces RNA |
+
+The red steroid stays visible inside the active complex. Optional fragments reward exploration.
+Retries are unlimited; checkpoints, collected fragments, and completed milestones survive a
+retry. Missed recruitment attempts repeat immediately. Short objectives and milestone captions
+support the action; reading never gates progress.
+
+## Quick start
+
+To play a local copy, install Node.js, npm, and Python 3, and use a browser with a keyboard.
+Run from the repository root:
 
 ```sh
 npm install
 ./run_web_server.sh
 ```
 
-The script builds and serves `dist/`, prints the local address, and opens a browser in an
-interactive macOS terminal. Stop it with Ctrl+C. Set `PORT` to choose a port.
+The script builds and serves `dist/`. Open the local address printed in the terminal; the title
+screen offers **Start adventure**. An interactive macOS terminal opens the browser automatically.
+Stop the server with Ctrl+C. Set `PORT` to choose a port.
 
-Move with Left/Right or A/D. Jump with Space, W, or Up; release early for a shorter jump.
-Esc pauses or resumes; R retries the checkpoint. Menus support Tab and Enter.
+## Controls and retries
+
+| Action | Keys |
+| --- | --- |
+| Move | Left / Right or A / D |
+| Jump | Space, W, or Up; release early for a shorter jump |
+| Extra air jump | Press jump again after receptor binding |
+| Pause / resume | Esc |
+| Retry checkpoint | R |
+| Navigate menus | Tab and Enter |
+
 The game pauses when it loses focus. Sound starts muted; enable it with the Sound button.
+Progress lasts only for this page session; Replay starts a new journey. Touch controls and
+persistent saves are outside this release.
 
-## The journey
+## About the biology
 
-Cross the permeable membrane, explore the cytoplasm, and enter through an open nuclear pore.
-Find a receptor in the nucleoplasm; binding unlocks an extra air jump. Match the complex to a
-hormone response element on DNA, then press jump for three recruitment actions while it stays
-bound. Missed timing attempts repeat immediately. An RNA transcript marks the finish.
+This is a generic nuclear steroid-receptor example. Receptor locations vary. The open pore is
+this level's route; steroids do not universally require pores for nuclear entry. Gravity,
+platforms, and the air jump are arcade abstractions. The complex remains bound at the hormone
+response element (HRE) while machinery assembles at the nearby promoter and transcription begins.
 
-Retries are unlimited. Checkpoints, collected optional fragments, and completed milestones
-survive a retry. Progress lasts only for this page session; Replay starts a new journey.
-Short objectives and captions support the action; reading never gates progress.
-
-This is a generic nuclear steroid-receptor example. Receptor locations vary. The pore is this
-level's route, without implying that steroids universally need pores for nuclear entry.
-Gravity, platforms, and the air jump are arcade abstractions.
+The 8-12 minute first-play target still needs a human playthrough.
 
 ## Build and verify
 
@@ -42,10 +76,13 @@ Gravity, platforms, and the air jump are arcade abstractions.
 ```
 
 The build produces the GitHub Pages-ready `dist/` artifact. Remote publication is a separate
-step. Browser setup and test usage are in [docs/PLAYWRIGHT_USAGE.md](docs/PLAYWRIGHT_USAGE.md).
-The state and lifecycle contract is in [docs/SOLID_MODEL.md](docs/SOLID_MODEL.md).
-Implementation history is in [docs/CHANGELOG.md](docs/CHANGELOG.md).
+step. The game uses TypeScript, SolidJS, and Canvas 2D, with procedural illustrations.
+
+- [docs/SOLID_MODEL.md](docs/SOLID_MODEL.md): simulation authority, UI lifecycle, and biological limits.
+- [docs/PLAYWRIGHT_USAGE.md](docs/PLAYWRIGHT_USAGE.md): browser setup, tests, and capture usage.
+- [tests/TESTS_TYPESCRIPT_README.md](tests/TESTS_TYPESCRIPT_README.md): TypeScript verification tools.
+- [docs/CHANGELOG.md](docs/CHANGELOG.md): implementation history and validation notes.
 
 ## License
 
-Source code: [LICENSE.MIT](LICENSE.MIT).
+Source code uses the MIT license: [LICENSE.MIT](LICENSE.MIT).

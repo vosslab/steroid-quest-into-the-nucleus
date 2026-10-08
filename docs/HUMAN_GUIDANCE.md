@@ -12,3 +12,8 @@ origin belongs there too. Rules: [REPO_STYLE.md](REPO_STYLE.md).
 - A temporary, easily removable wrapper is acceptable for the Graphify crash.
   Make the edited node count match the expected normalized count.
 - Implement the approved plan through implementation and verification.
+- Use the README documentation skill and include the working live GitHub Pages URL.
+- Make more obstacles and add more cellular debris as the player progresses.
+- Show the steroid changing shape as it binds, using the supplied steroid-flexibility paper.
+- Use algorithmically generated sounds for the game.
+- Exaggerate the steroid's visible movement during binding.

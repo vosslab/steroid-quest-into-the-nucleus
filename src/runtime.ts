@@ -33,6 +33,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     if (disposed) return;
     input.clear();
     simulation.pause();
+    const level = levels[simulation.state.levelIndex];
+    if (level) audio.update(simulation.state, level.id);
     accumulator = 0;
   };
   const input = createInput(canvas, (command) => {
@@ -101,6 +103,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     }
     context.setTransform(canvas.width / VIEW_WIDTH, 0, 0, canvas.height / VIEW_HEIGHT, 0, 0);
     const level = levels[simulation.state.levelIndex];
+    if (level) audio.update(simulation.state, level.id);
     if (level)
       renderer.draw({
         state: simulation.state,

@@ -56,3 +56,11 @@ overview, [General principles of cell communication](https://www.ncbi.nlm.nih.go
 The nucleus-localized receptor in this game is an authored example, not a universal location.
 The continuously open pore is the chosen level route, not a universal nuclear-entry requirement.
 Gravity, bounce surfaces, platform geometry, and the unlocked air jump are arcade abstractions.
+
+Binding artwork exaggerates schematic conformational adjustment of the steroid and receptor
+pocket while preserving the red steroid's four-ring scaffold. This depicts accommodation during
+binding, not a chemical reaction. With reduced motion, show the settled bound shape directly.
+The exaggerated motion is deliberately not scale accurate. The supplied paper
+[Steroid flexibility and receptor specificity](https://www.sciencedirect.com/science/article/pii/0022473180901120)
+discusses particular unsaturated steroids. The illustration neither measures atomic displacement
+or binding energy nor implies that all steroid ligands have equal flexibility.
