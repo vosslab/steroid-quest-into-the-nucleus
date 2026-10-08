@@ -117,6 +117,45 @@ test("bounce surfaces launch without pressing jump or cutting the automatic boun
   assert.equal(sim.state.deathCount, 0);
 });
 
+test("solid organelle tunnels block walls and ceilings while leaving a controllable route out", () => {
+  const ceiling = { id: "tunnel-ceiling", x: 120, y: 180, width: 260, height: 30, kind: "solid" };
+  const wall = { id: "tunnel-wall", x: 380, y: 180, width: 30, height: 160, kind: "solid" };
+  const sim = start(
+    level({
+      spawn: { x: 70, y: 270 },
+      platforms: [
+        { id: "floor", x: 0, y: 300, width: 1000, height: 40, kind: "solid" },
+        ceiling,
+        wall,
+      ],
+    }),
+  ).sim;
+
+  until(sim, () => sim.state.player.x > 330, right);
+  advance(sim, 0.4, right);
+  assert.ok(
+    sim.state.player.x + sim.state.player.width <= wall.x,
+    "A solid organelle wall must stop a moving player before it can tunnel through",
+  );
+
+  until(sim, () => sim.state.player.x < 280, { ...idle, left: true });
+  let hitCeiling = false;
+  for (let i = 0; i < Math.ceil(0.7 / dt); i += 1) {
+    const rising = sim.state.player.vy < 0;
+    sim.step({ ...jump, left: true }, dt);
+    if (rising && sim.state.player.vy === 0) hitCeiling = true;
+    assert.ok(
+      sim.state.player.y >= ceiling.y + ceiling.height,
+      "The player must remain below a solid tunnel ceiling",
+    );
+  }
+  assert.ok(hitCeiling, "A normal jump inside the tunnel should be cut by its ceiling");
+
+  until(sim, () => sim.state.player.x < 100, { ...idle, left: true });
+  assert.equal(sim.state.phase, "playing");
+  assert.equal(sim.state.deathCount, 0);
+});
+
 test("hazard recovery restores the checkpoint and preserves discoveries and binding", () => {
   const { sim, events } = start(
     level({

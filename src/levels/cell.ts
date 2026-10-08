@@ -360,12 +360,128 @@ for (const district of cytoplasmDistricts) {
   }
 }
 
+type CytoplasmTunnel = {
+  id: string;
+  x: number;
+  width: number;
+  upperBaffleX: number;
+  lowerBaffleX: number;
+  material: Platform["material"];
+};
+
+// These are real collision passages, rather than a painted ceiling over the old shelf route.
+// The 255-pixel open lumen gives a low, cellular "gel tunnel" rhythm, while staggered
+// organelle masses leave 125-155 pixel openings that remain comfortably wider than the player.
+const cytoplasmTunnels: readonly CytoplasmTunnel[] = [
+  {
+    id: "entry_gel",
+    x: 0,
+    width: 1250,
+    upperBaffleX: 485,
+    // It sits below the high recovery shelf, so a runner never meets a full-height trap.
+    lowerBaffleX: 1100,
+    material: "gel",
+  },
+  {
+    id: "organelle_weave",
+    x: 5355,
+    width: 1415,
+    upperBaffleX: 5700,
+    lowerBaffleX: 5850,
+    material: "mitochondrion",
+  },
+  {
+    id: "vesicle_lane",
+    x: 14915,
+    width: 1300,
+    upperBaffleX: 15200,
+    lowerBaffleX: 15860,
+    material: "reticulum",
+  },
+  {
+    id: "spring_grove",
+    x: 24705,
+    width: 720,
+    upperBaffleX: 24890,
+    lowerBaffleX: 25170,
+    material: "mitochondrion",
+  },
+  {
+    id: "nuclear_approach",
+    x: 30355,
+    width: 2210,
+    upperBaffleX: 30670,
+    lowerBaffleX: 31500,
+    material: "reticulum",
+  },
+];
+
+for (const tunnel of cytoplasmTunnels) {
+  const roofY = 520;
+  const roofHeight = 45;
+  const floorY = 820;
+  const tunnelEnd = tunnel.x + tunnel.width;
+  cytoplasmPlatforms.push(
+    {
+      id: `cytoplasm-${tunnel.id}-corridor-roof`,
+      x: tunnel.x,
+      y: roofY,
+      width: tunnel.width,
+      height: roofHeight,
+      kind: "solid",
+      material: "gel",
+    },
+    {
+      id: `cytoplasm-${tunnel.id}-corridor-floor`,
+      x: tunnel.x,
+      y: floorY,
+      width: tunnel.width,
+      height: 280,
+      kind: "solid",
+      material: "gel",
+    },
+    {
+      id: `cytoplasm-${tunnel.id}-corridor-upper-mass`,
+      x: tunnel.upperBaffleX,
+      y: roofY + roofHeight,
+      width: 130,
+      height: 100,
+      kind: "solid",
+      material: tunnel.material,
+    },
+    {
+      id: `cytoplasm-${tunnel.id}-corridor-lower-mass`,
+      x: tunnel.lowerBaffleX,
+      y: 690,
+      width: 145,
+      height: floorY - 690,
+      kind: "solid",
+      material: tunnel.material,
+    },
+  );
+  cytoplasmDecorations.push({
+    kind: "vesicle",
+    x: tunnel.x + 90,
+    y: 300,
+    width: Math.min(230, tunnel.width - 180),
+    height: 125,
+  });
+  cytoplasmDecorations.push({
+    kind: "filament",
+    x: tunnel.x + 80,
+    y: 845,
+    width: Math.max(160, tunnelEnd - tunnel.x - 160),
+    height: 90,
+  });
+}
+
 const cytoplasm: LevelDefinition = {
   id: "cytoplasm",
   name: "Through the crowded cytoplasm",
   objective:
-    "Follow six cytoskeletal districts toward the nucleus. Upper routes hide optional sparks.",
-  caption: "The cytoplasm is crowded with organelles and a cytoskeleton.",
+    "Move through gel corridors and six cytoskeletal districts. Upper routes hide optional sparks.",
+  caption:
+    "The cytoplasm is crowded: organelle passages alternate with open cytoskeletal chambers.",
   width: cytoplasmX,
   height: 1100,
   spawn: { x: 70, y: 750 },

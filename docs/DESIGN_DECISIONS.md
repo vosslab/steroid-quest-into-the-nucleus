@@ -118,3 +118,33 @@ supplied paper concerns particular unsaturated steroids; preserve that scope.
 
 **Owner.** [src/drawing.ts](../src/drawing.ts), [src/renderer.ts](../src/renderer.ts), and
 [SOLID_MODEL.md](SOLID_MODEL.md).
+
+### Bounded algorithmic sound
+
+**Decision.** Synthesize regional textures, evolving quiet motifs, and molecular event cues
+through the existing runtime frame loop. Sound starts muted and requires an unmute gesture.
+
+**Why.** Procedural audio gives movement and milestones distinct character without audio assets,
+network dependencies, or a second timing loop.
+
+**Consequence.** Bound synthesis to 36 primary voices with at most one FM oscillator per voice.
+Pause/mute fade-stop scheduled cues immediately, including transition and death tails. Keep the
+activated context silently running during pause/mute to avoid suspend/resume races; close it on
+disposal. Verify signal/resource behavior separately from listening appeal.
+
+**Owner.** [src/audio.ts](../src/audio.ts), [src/runtime.ts](../src/runtime.ts), and
+[SOLID_MODEL.md](SOLID_MODEL.md).
+
+### Cellular corridor materials
+
+**Decision.** Use optional platform materials for membrane, mitochondrion, reticulum, and gel
+art on solid collision rectangles. Clip cellular masses to those authored rectangles.
+
+**Why.** Crowded organelles and gel/tunnel passages should communicate traversable empty space
+and physical boundaries while retaining one collision authority.
+
+**Consequence.** Material changes only Canvas presentation. Existing platforms without a
+material retain their appearance; movement and collisions continue to use rectangle geometry.
+
+**Owner.** [src/types/level.ts](../src/types/level.ts), [src/drawing.ts](../src/drawing.ts), and
+[src/renderer.ts](../src/renderer.ts).

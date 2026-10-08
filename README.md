@@ -25,6 +25,7 @@ The journey turns a molecular pathway into six playable challenges:
 | Transcription | Time three jump-button recruitment actions | Machinery assembles and polymerase produces RNA |
 
 The red steroid stays visible inside the active complex. Optional fragments reward exploration.
+Cellular debris becomes denser as you progress, with new obstacles along the authored routes.
 Retries are unlimited; checkpoints, collected fragments, and completed milestones survive a
 retry. Missed recruitment attempts repeat immediately. Short objectives and milestone captions
 support the action; reading never gates progress.
@@ -55,6 +56,8 @@ Stop the server with Ctrl+C. Set `PORT` to choose a port.
 | Navigate menus | Tab and Enter |
 
 The game pauses when it loses focus. Sound starts muted; enable it with the Sound button.
+Optional algorithmic sound gives each region its own textures and evolving motifs, with cues
+for movement, binding, recruitment, and RNA production.
 Progress lasts only for this page session; Replay starts a new journey. Touch controls and
 persistent saves are outside this release.
 
@@ -64,8 +67,12 @@ This is a generic nuclear steroid-receptor example. Receptor locations vary. The
 this level's route; steroids do not universally require pores for nuclear entry. Gravity,
 platforms, and the air jump are arcade abstractions. The complex remains bound at the hormone
 response element (HRE) while machinery assembles at the nearby promoter and transcription begins.
+The steroid and binding pocket visibly adjust together. Their exaggerated flexibility is a
+schematic illustration that preserves the four-ring scaffold, rather than a chemical conversion.
 
-The 8-12 minute first-play target still needs a human playthrough.
+A practiced automated route completed through real controls in 4:53, including two deaths.
+The 8-12 minute first-play target still needs a human playthrough; this timing does not
+establish human enjoyment.
 
 ## Build and verify
 

@@ -1,4 +1,13 @@
-import { decoration, dna, label, motif, receptor, rounded, steroid } from "./drawing";
+import {
+  decoration,
+  dna,
+  label,
+  motif,
+  organellePlatform,
+  receptor,
+  rounded,
+  steroid,
+} from "./drawing";
 import { cellularDebris } from "./debris";
 import { platformRect } from "./physics";
 import type { RenderSnapshot, Renderer } from "./types/render";
@@ -112,14 +121,18 @@ function drawWorld(
         time,
       );
     }
-    const color = p.kind === "bounce" ? "#dc9ad5" : level.palette.foreground;
-    rounded(ctx, r, Math.min(12, r.height / 2), color, "#ffffff25");
-    rounded(
-      ctx,
-      { x: r.x + 3, y: r.y, width: Math.max(1, r.width - 6), height: 5 },
-      3,
-      p.kind === "bounce" ? "#ffe2fa" : level.palette.accent,
-    );
+    if (p.material && p.kind === "solid") {
+      organellePlatform(ctx, r, p.material, level.palette.accent);
+    } else {
+      const color = p.kind === "bounce" ? "#dc9ad5" : level.palette.foreground;
+      rounded(ctx, r, Math.min(12, r.height / 2), color, "#ffffff25");
+      rounded(
+        ctx,
+        { x: r.x + 3, y: r.y, width: Math.max(1, r.width - 6), height: 5 },
+        3,
+        p.kind === "bounce" ? "#ffe2fa" : level.palette.accent,
+      );
+    }
     if (p.kind === "bounce") {
       for (let x = r.x + 18; x < r.x + r.width; x += 26) {
         ctx.beginPath();

@@ -1,10 +1,10 @@
-import type { Decoration, Rect } from "./types/level";
+import type { Decoration, PlatformMaterial, Rect } from "./types/level";
 
 export function rounded(
   ctx: CanvasRenderingContext2D,
   r: Rect,
   radius: number,
-  fill: string,
+  fill: string | CanvasGradient | CanvasPattern,
   stroke?: string,
 ): void {
   ctx.beginPath();
@@ -13,6 +13,166 @@ export function rounded(
   ctx.fill();
   if (stroke) {
     ctx.strokeStyle = stroke;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+}
+
+/**
+ * Draw a substantial cellular mass inside the exact collision rectangle.  The organic details
+ * explain what is solid, while the rectangle remains the only source of platform physics.
+ */
+export function organellePlatform(
+  ctx: CanvasRenderingContext2D,
+  r: Rect,
+  material: PlatformMaterial,
+  accent: string,
+): void {
+  const radius = Math.min(18, r.height / 2, r.width / 8);
+  const palette = materialPalette(material, accent);
+  const fill = ctx.createLinearGradient(r.x, r.y, r.x, r.y + r.height);
+  fill.addColorStop(0, palette.light);
+  fill.addColorStop(0.16, palette.mid);
+  fill.addColorStop(1, palette.dark);
+  rounded(ctx, r, radius, fill, palette.rim);
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(r.x + 2, r.y + 2, Math.max(1, r.width - 4), Math.max(1, r.height - 4), radius);
+  ctx.clip();
+  if (material === "mitochondrion") drawMitochondrialCristae(ctx, r, palette.detail);
+  if (material === "reticulum") drawReticulumChannels(ctx, r, palette.detail, palette.light);
+  if (material === "gel") drawGelMatrix(ctx, r, palette.detail, palette.light);
+  if (material === "membrane") drawMembraneLayers(ctx, r, palette.detail);
+  ctx.restore();
+  rounded(
+    ctx,
+    { x: r.x + 5, y: r.y + 4, width: Math.max(1, r.width - 10), height: Math.min(6, r.height / 3) },
+    3,
+    `${palette.light}a8`,
+  );
+}
+
+type MaterialPalette = { light: string; mid: string; dark: string; rim: string; detail: string };
+
+function materialPalette(material: PlatformMaterial, accent: string): MaterialPalette {
+  switch (material) {
+    case "mitochondrion":
+      return {
+        light: "#f29c84",
+        mid: "#9e4a61",
+        dark: "#44243f",
+        rim: "#ffd4b0",
+        detail: "#ffccb0",
+      };
+    case "reticulum":
+      return {
+        light: "#a0e2d0",
+        mid: "#397b84",
+        dark: "#173b56",
+        rim: "#c9fff0",
+        detail: "#d8fff2",
+      };
+    case "gel":
+      return {
+        light: "#a8d8e2",
+        mid: "#4f8295",
+        dark: "#1d485f",
+        rim: "#cef8fa",
+        detail: "#defaff",
+      };
+    case "membrane":
+      return { light: accent, mid: "#bd7f5b", dark: "#59364b", rim: "#ffe2a0", detail: "#fff1b5" };
+  }
+}
+
+function drawMitochondrialCristae(ctx: CanvasRenderingContext2D, r: Rect, detail: string): void {
+  const spacing = 26;
+  for (let x = r.x + 14; x < r.x + r.width - 8; x += spacing) {
+    ctx.beginPath();
+    ctx.moveTo(x, r.y + 7);
+    ctx.bezierCurveTo(
+      x - 10,
+      r.y + r.height * 0.36,
+      x + 12,
+      r.y + r.height * 0.55,
+      x,
+      r.y + r.height - 7,
+    );
+    ctx.strokeStyle = `${detail}b8`;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+}
+
+function drawReticulumChannels(
+  ctx: CanvasRenderingContext2D,
+  r: Rect,
+  detail: string,
+  light: string,
+): void {
+  const channelHeight = Math.max(12, Math.min(25, r.height * 0.3));
+  for (let y = r.y + 12; y < r.y + r.height - 8; y += channelHeight + 11) {
+    ctx.beginPath();
+    ctx.moveTo(r.x - 12, y);
+    for (let x = r.x; x <= r.x + r.width + 16; x += 28) {
+      ctx.quadraticCurveTo(x + 14, y - channelHeight * 0.42, x + 28, y);
+    }
+    ctx.strokeStyle = `${detail}ab`;
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    for (let x = r.x + 18; x < r.x + r.width; x += 38) {
+      ctx.beginPath();
+      ctx.arc(x, y + channelHeight * 0.38, 3.3, 0, Math.PI * 2);
+      ctx.fillStyle = `${light}bb`;
+      ctx.fill();
+    }
+  }
+}
+
+function drawGelMatrix(
+  ctx: CanvasRenderingContext2D,
+  r: Rect,
+  detail: string,
+  light: string,
+): void {
+  const step = 26;
+  for (let x = r.x - r.height; x < r.x + r.width; x += step) {
+    ctx.beginPath();
+    ctx.moveTo(x, r.y + r.height);
+    ctx.lineTo(x + r.height, r.y);
+    ctx.strokeStyle = `${detail}58`;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  for (let x = r.x + 12; x < r.x + r.width; x += 30) {
+    for (let y = r.y + 13; y < r.y + r.height; y += 28) {
+      ctx.beginPath();
+      ctx.arc(x + (Math.floor(y / 28) % 2) * 8, y, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = `${light}86`;
+      ctx.fill();
+    }
+  }
+}
+
+function drawMembraneLayers(ctx: CanvasRenderingContext2D, r: Rect, detail: string): void {
+  const isVertical = r.height > r.width;
+  const span = isVertical ? r.height : r.width;
+  for (let offset = 12; offset < span; offset += 20) {
+    const x = isVertical ? r.x + r.width * 0.3 : r.x + offset;
+    const y = isVertical ? r.y + offset : r.y + r.height * 0.3;
+    ctx.beginPath();
+    ctx.arc(x, y, 4.6, 0, Math.PI * 2);
+    ctx.fillStyle = `${detail}cf`;
+    ctx.fill();
+    ctx.beginPath();
+    if (isVertical) {
+      ctx.moveTo(x + 4, y);
+      ctx.lineTo(r.x + r.width * 0.7, y);
+    } else {
+      ctx.moveTo(x, y + 4);
+      ctx.lineTo(x, r.y + r.height * 0.7);
+    }
+    ctx.strokeStyle = `${detail}8d`;
     ctx.lineWidth = 2;
     ctx.stroke();
   }

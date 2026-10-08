@@ -1,11 +1,11 @@
 // Built-artifact acceptance: real keys and read-only observations; never mutates game state.
-// Run: node --import tsx tests/playwright/campaign_walkthrough.mjs [preview URL]
+// Run: node --import tsx tests/playwright/campaign_walkthrough.mjs [preview URL] [output directory]
 import { chromium } from "playwright";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { CAMPAIGN } from "../../src/levels.ts";
 
-const output = "test-results/campaign";
+const output = process.argv[3] ?? "test-results/campaign";
 await mkdir(output, { recursive: true });
 const hashes = Object.fromEntries(
   await Promise.all(
@@ -171,6 +171,20 @@ while (Date.now() - started < 600_000) {
     if (stage === "membrane" && x > 2450) await capture("bilayer-crossing");
     if (stage === "envelope" && x > 1940 && x < 2210) await capture("open-pore");
     if (stage === "cytoplasm" && x > 17700 && x < 18200) await capture("filament-garden");
+    if (stage === "cytoplasm") {
+      for (const roof of level.platforms.filter((p) => p.id.endsWith("-corridor-roof"))) {
+        const name = roof.id.replace(/-roof$/, "");
+        if (
+          x > roof.x + roof.width * 0.4 &&
+          x < roof.x + roof.width * 0.8 &&
+          y >= roof.y + roof.height &&
+          !captures.has(name)
+        ) {
+          await capture(name);
+          observations.push({ event: "corridor", id: name, elapsed, x, y });
+        }
+      }
+    }
     if (stage === "dna" && x > 13000 && x < 13500) await capture("moving-nucleosomes");
     if (stage === "dna" && x > 18800 && x < 19400) await capture("chromatin-fold");
     const hre = level.triggers.find((trigger) => trigger.kind === "hre");

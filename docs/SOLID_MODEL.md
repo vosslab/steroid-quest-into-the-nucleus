@@ -6,6 +6,9 @@
 The fixed-step controller handles player motion, collisions, triggers, checkpoints, retries,
 receptor binding, HRE docking, and recruitment. Level definitions own authored geometry and
 objectives. Rendering geometry is separate from collision bounds.
+Optional platform materials clip membrane, mitochondrion, reticulum, or gel artwork to solid
+collision rectangles. Materials change presentation only; authored empty corridors and the
+rectangle controller determine where the player can move.
 
 [src/app.tsx](../src/app.tsx) uses scalar Solid signals for the current phase, stage, fragment
 tally, ability, checkpoint, recruitment count, captions, sound setting, and ending time.
@@ -29,6 +32,15 @@ motion-preference listeners, disposes input and rendering, and closes any create
 Input disposal removes window, canvas, and document listeners and clears held keys.
 [src/audio.ts](../src/audio.ts) creates synthesized sound only after an unmute gesture; sound
 starts muted. Reduced-motion preference limits decorative motion without changing progression.
+
+Algorithmic audio uses regional seeded-noise textures, synthesized plucks and tones, and evolving
+motifs with movement and molecular event cues. The existing runtime frame loop schedules pulses;
+audio creates no separate timer or game loop. Limit synthesis to 36 primary voices with at most
+one FM oscillator per voice. Pause and mute fade-stop active and scheduled cues, including death
+and stage-transition tails; focus-loss pause updates audio immediately. After the first unmute
+gesture, the context remains silently running during pause/mute to avoid suspend/resume races.
+Replay clears old cues, and disposal closes the context. Synthesis measurements verify output
+and lifecycle behavior separately from subjective listening judgment.
 
 ## Keyboard input boundary
 

@@ -2,9 +2,12 @@
 export type StageId = "membrane" | "cytoplasm" | "envelope" | "receptor" | "dna" | "transcription";
 export type Point = { x: number; y: number };
 export type Rect = Point & { width: number; height: number };
+/** Visual treatment for a collision rectangle. Material never changes simulation geometry. */
+export type PlatformMaterial = "membrane" | "mitochondrion" | "reticulum" | "gel";
 export type Platform = Rect & {
   id: string;
   kind: "solid" | "oneway" | "bounce";
+  material?: PlatformMaterial;
   motion?: { axis: "x" | "y"; distance: number; period: number; phase?: number };
 };
 export type Hazard = Rect & { id: string; kind: "enzyme" | "acid" | "spike" };

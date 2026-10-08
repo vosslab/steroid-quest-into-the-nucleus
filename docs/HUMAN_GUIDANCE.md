@@ -17,3 +17,5 @@ origin belongs there too. Rules: [REPO_STYLE.md](REPO_STYLE.md).
 - Show the steroid changing shape as it binds, using the supplied steroid-flexibility paper.
 - Use algorithmically generated sounds for the game.
 - Exaggerate the steroid's visible movement during binding.
+- Give the game frame more style using the CSS creative expert skill.
+- Make the cell more crowded with organelles, and add gel or tunnel movement alongside platforms.
