@@ -1,4 +1,4 @@
-import { PLAYER_HEIGHT, PLAYER_WIDTH } from "./constants";
+import { PLAYER_HEIGHT, PLAYER_RADIUS, PLAYER_WIDTH } from "./constants";
 import type { LevelDefinition, Point } from "./types/level";
 import type { PlayerState, SimulationState } from "./types/simulation";
 
@@ -9,12 +9,9 @@ export function createPlayer(spawn: Point): PlayerState {
     height: PLAYER_HEIGHT,
     vx: 0,
     vy: 0,
-    grounded: false,
-    facing: 1,
-    standingOnId: undefined,
-    coyoteRemaining: 0,
-    jumpBufferRemaining: 0,
-    airJumpsRemaining: 0,
+    radius: PLAYER_RADIUS,
+    attachment: undefined,
+    captureCooldown: 0,
   };
 }
 
@@ -25,10 +22,10 @@ export function createGameState(levels: readonly LevelDefinition[]): SimulationS
     phase: "title",
     levelIndex: 0,
     player: createPlayer(first.spawn),
-    checkpoint: { id: "start", levelIndex: 0, spawn: { ...first.spawn } },
+    checkpoint: { id: "start", levelIndex: 0, order: 0, spawn: { ...first.spawn } },
     collectedIds: new Set<string>(),
     activatedTriggerIds: new Set<string>(),
-    crumbleStates: new Map(),
+    encounterPhases: new Map<string, number>(),
     receptorBound: false,
     hreBound: false,
     recruitmentCount: 0,

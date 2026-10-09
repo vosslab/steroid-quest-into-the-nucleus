@@ -24,6 +24,9 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   let animationFrame = 0;
   let lastTime: number | undefined;
   let accumulator = 0;
+  // Keep the title preference in memory without creating AudioContext before Start.
+  let soundMuted = false;
+  let started = false;
   const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
   let reducedMotion = motionPreference.matches;
   const preferenceChanged = (): void => {
@@ -77,8 +80,11 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     canvas.dataset.stage = levels[state.levelIndex]?.id ?? "";
     canvas.dataset.playerX = state.player.x.toFixed(2);
     canvas.dataset.playerY = state.player.y.toFixed(2);
-    canvas.dataset.grounded = String(state.player.grounded);
-    canvas.dataset.standingPlatform = state.player.standingOnId ?? "";
+    canvas.dataset.playerVx = state.player.vx.toFixed(2);
+    canvas.dataset.playerVy = state.player.vy.toFixed(2);
+    canvas.dataset.attachmentId = state.player.attachment?.id ?? "";
+    canvas.dataset.attachmentKind = state.player.attachment?.kind ?? "";
+    canvas.dataset.encounterPhases = JSON.stringify(Object.fromEntries(state.encounterPhases));
     canvas.dataset.receptorBound = String(state.receptorBound);
     canvas.dataset.hreBound = String(state.hreBound);
     canvas.dataset.recruitmentClock = state.recruitmentClock.toFixed(4);
@@ -86,6 +92,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     canvas.dataset.elapsed = state.elapsed.toFixed(2);
     canvas.dataset.deaths = String(state.deathCount);
     canvas.dataset.checkpoint = state.checkpoint.id;
+    canvas.dataset.checkpointOrder = String(state.checkpoint.order);
     canvas.dataset.collected = String(state.collectedIds.size);
   };
   const frame = (time: number): void => {
@@ -97,7 +104,10 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       const sampled = input.sample();
       let firstStep = true;
       while (accumulator >= FIXED_STEP) {
-        simulation.step({ ...sampled, jumpPressed: firstStep && sampled.jumpPressed }, FIXED_STEP);
+        simulation.step(
+          { ...sampled, pulsePressed: firstStep && sampled.pulsePressed },
+          FIXED_STEP,
+        );
         firstStep = false;
         accumulator -= FIXED_STEP;
       }
@@ -121,6 +131,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     start(): void {
       if (!disposed) {
         input.clear();
+        started = true;
+        audio.setMuted(soundMuted);
         simulation.start();
         focus();
       }
@@ -142,7 +154,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       }
     },
     setMuted(muted: boolean): void {
-      audio.setMuted(muted);
+      soundMuted = muted;
+      if (started) audio.setMuted(muted);
     },
     getState: () => simulation.state,
     dispose(): void {

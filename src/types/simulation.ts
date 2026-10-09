@@ -1,21 +1,23 @@
 import type { Rect, Point } from "./level";
 import type { InputFrame } from "./input";
+export type Attachment = {
+  kind: "transport" | "sticky";
+  id: string;
+  progress: number;
+  remaining: number;
+  heldTime: number;
+};
+/** x/y are the bounding box top-left; all contact uses its inscribed circle. */
 export type PlayerState = Rect & {
+  radius: number;
   vx: number;
   vy: number;
-  grounded: boolean;
-  facing: -1 | 1;
-  standingOnId: string | undefined;
-  coyoteRemaining: number;
-  jumpBufferRemaining: number;
-  airJumpsRemaining: number;
+  attachment: Attachment | undefined;
+  captureCooldown: number;
 };
-/** Retry restores position/stage while preserving collections and completed milestones. */
-export type CheckpointState = { id: string; levelIndex: number; spawn: Point };
+export type CheckpointState = { id: string; levelIndex: number; order: number; spawn: Point };
 export type GamePhase =
   "title" | "playing" | "paused" | "transition" | "respawning" | "recruiting" | "ended";
-/** Missing map entries are intact; expired collapsed entries wait for clear reform space. */
-export type CrumbleState = { phase: "armed" | "collapsed"; remaining: number };
 export type SimulationState = {
   phase: GamePhase;
   levelIndex: number;
@@ -23,8 +25,7 @@ export type SimulationState = {
   checkpoint: CheckpointState;
   collectedIds: Set<string>;
   activatedTriggerIds: Set<string>;
-  /** Simulation-owned transient timers, cleared on retry, stage change, and Replay. */
-  crumbleStates: Map<string, CrumbleState>;
+  encounterPhases: Map<string, number>;
   receptorBound: boolean;
   hreBound: boolean;
   recruitmentCount: number;
@@ -37,12 +38,16 @@ export type SimulationState = {
 };
 export type GameEvent =
   | { type: "state" }
+  | { type: "reset" }
   | { type: "stage"; levelIndex: number; name: string; objective: string }
   | { type: "caption"; text: string }
   | { type: "collect"; total: number }
   | { type: "checkpoint"; id: string }
   | { type: "death"; total: number }
-  | { type: "bounce"; platformId: string }
+  | { type: "bounce"; obstacleId: string }
+  | { type: "capture" | "release"; id: string }
+  | { type: "encounter"; id: string; phase: number }
+  | { type: "pulse" }
   | { type: "bound" }
   | { type: "hre" }
   | { type: "recruitment"; count: number; success: boolean }

@@ -19,7 +19,8 @@ export function App(): JSX.Element {
   const [checkpoint, setCheckpoint] = createSignal(false);
   const [recruitment, setRecruitment] = createSignal(0);
   const [caption, setCaption] = createSignal("");
-  const [muted, setMuted] = createSignal(true);
+  // Sound is on by default, but runtime waits for the Start gesture before creating audio.
+  const [muted, setMuted] = createSignal(false);
   const [elapsed, setElapsed] = createSignal(0);
   const stage = (): LevelDefinition | undefined => CAMPAIGN[stageIndex()];
   const totalCollectibles = CAMPAIGN.reduce((total, level) => total + level.collectibles.length, 0);
@@ -168,7 +169,7 @@ export function App(): JSX.Element {
             width="960"
             height="540"
             tabindex={overlay() ? -1 : 0}
-            aria-label="Steroid Quest game world. Move with arrows or A and D. Jump with Space, W, or Up."
+            aria-label="Steroid Quest game world. Arrow Left and Arrow Right steer. Space pulses upward; hold Space for upward thrust."
           />
           <Show when={phase() === "title"}>
             <section
@@ -198,13 +199,16 @@ export function App(): JSX.Element {
                 <p class="session-note">
                   Six stages &middot; Unlimited retries &middot; Optional fragments
                 </p>
+                <button class="text-button" onClick={toggleSound} aria-pressed={!muted()}>
+                  Sound {muted() ? "off" : "on"}
+                </button>
                 <div class="start-controls">
                   <span>
-                    <kbd>A</kbd>
-                    <kbd>D</kbd> / arrows <b>Move</b>
+                    <kbd>Left</kbd>
+                    <kbd>Right</kbd> <b>Steer</b>
                   </span>
                   <span>
-                    <kbd>Space</kbd> / W / Up <b>Jump</b>
+                    <kbd>Space</kbd> <b>Pulse / hold to rise</b>
                   </span>
                 </div>
               </div>
@@ -231,7 +235,7 @@ export function App(): JSX.Element {
                 <button class="secondary-button" onClick={() => play("retry")}>
                   Retry checkpoint
                 </button>
-                <button class="text-button" onClick={toggleSound}>
+                <button class="text-button" onClick={toggleSound} aria-pressed={!muted()}>
                   Sound {muted() ? "off" : "on"}
                 </button>
               </div>
@@ -285,7 +289,7 @@ export function App(): JSX.Element {
                 }
               >
                 <strong>Assemble the machinery</strong>
-                <span>Press jump when the marker enters the bright zone.</span>
+                <span>Press Space when the marker enters the bright zone.</span>
                 <span class="recruitment-count">
                   {recruitment()} / 3 recruited &middot; Miss? Try again.
                 </span>
@@ -319,7 +323,9 @@ export function App(): JSX.Element {
             </For>
           </div>
           <span class="ability-status">
-            {bound() ? "Complex active / Extra air jump" : "Red steroid / Find your receptor"}
+            {bound()
+              ? "Complex active / DNA recognition enabled"
+              : "Red steroid / Find your receptor"}
           </span>
         </footer>
       </section>
@@ -331,9 +337,10 @@ export function App(): JSX.Element {
         <details>
           <summary>About this journey</summary>
           <p>
-            This generic nuclear steroid-receptor pathway is an arcade model. Movement, jumps, and
-            obstacles are game abstractions. The open pore is this level's route; steroids do not
-            universally require pores for nuclear entry, and receptor locations vary.
+            This generic nuclear steroid-receptor pathway is an arcade model. Fluid forces, pulses,
+            transport, and obstacles are exaggerated game abstractions. The open pore is this
+            level's route; steroids do not universally require pores for nuclear entry, and receptor
+            locations vary.
           </p>
           <p>
             Binding involves small shape adjustments in the steroid and receptor. The moving

@@ -1,4 +1,4 @@
-import type { Decoration, PlatformMaterial, Rect } from "./types/level";
+import type { Decoration, SurfaceMaterial, Rect, Shape } from "./types/level";
 
 export function rounded(
   ctx: CanvasRenderingContext2D,
@@ -18,43 +18,79 @@ export function rounded(
   }
 }
 
-/**
- * Draw a substantial cellular mass inside the exact collision rectangle.  The organic details
- * explain what is solid, while the rectangle remains the only source of platform physics.
- */
-export function organellePlatform(
+/** Collision outlines use the authored round shape so every wall reads as a rebound surface. */
+export function collisionShape(
   ctx: CanvasRenderingContext2D,
-  r: Rect,
-  material: PlatformMaterial,
+  shape: Shape,
+  fill: string,
+  stroke: string,
+): void {
+  ctx.beginPath();
+  if (shape.kind === "circle") {
+    ctx.arc(shape.center.x, shape.center.y, shape.radius, 0, Math.PI * 2);
+  } else if (shape.kind === "capsule") {
+    const dx = shape.end.x - shape.start.x;
+    const dy = shape.end.y - shape.start.y;
+    const length = Math.hypot(dx, dy);
+    const angle = Math.atan2(dy, dx);
+    ctx.save();
+    ctx.translate(shape.start.x, shape.start.y);
+    ctx.rotate(angle);
+    ctx.roundRect(
+      -shape.radius,
+      -shape.radius,
+      length + shape.radius * 2,
+      shape.radius * 2,
+      shape.radius,
+    );
+    ctx.restore();
+  } else {
+    ctx.roundRect(shape.x, shape.y, shape.width, shape.height, shape.radius);
+  }
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+}
+
+/** Cellular detail is clipped to the exact rounded collision silhouette. */
+export function organelleSurface(
+  ctx: CanvasRenderingContext2D,
+  shape: Shape,
+  material: SurfaceMaterial,
   accent: string,
 ): void {
-  const radius = Math.min(18, r.height / 2, r.width / 8);
+  const r: Rect =
+    shape.kind === "circle"
+      ? {
+          x: shape.center.x - shape.radius,
+          y: shape.center.y - shape.radius,
+          width: shape.radius * 2,
+          height: shape.radius * 2,
+        }
+      : shape.kind === "capsule"
+        ? {
+            x: Math.min(shape.start.x, shape.end.x) - shape.radius,
+            y: Math.min(shape.start.y, shape.end.y) - shape.radius,
+            width: Math.abs(shape.end.x - shape.start.x) + shape.radius * 2,
+            height: Math.abs(shape.end.y - shape.start.y) + shape.radius * 2,
+          }
+        : shape;
   const palette = materialPalette(material, accent);
-  const fill = ctx.createLinearGradient(r.x, r.y, r.x, r.y + r.height);
-  fill.addColorStop(0, palette.light);
-  fill.addColorStop(0.16, palette.mid);
-  fill.addColorStop(1, palette.dark);
-  rounded(ctx, r, radius, fill, palette.rim);
+  collisionShape(ctx, shape, palette.dark, palette.rim);
   ctx.save();
-  ctx.beginPath();
-  ctx.roundRect(r.x + 2, r.y + 2, Math.max(1, r.width - 4), Math.max(1, r.height - 4), radius);
   ctx.clip();
   if (material === "mitochondrion") drawMitochondrialCristae(ctx, r, palette.detail);
   if (material === "reticulum") drawReticulumChannels(ctx, r, palette.detail, palette.light);
   if (material === "gel") drawGelMatrix(ctx, r, palette.detail, palette.light);
   if (material === "membrane") drawMembraneLayers(ctx, r, palette.detail);
   ctx.restore();
-  rounded(
-    ctx,
-    { x: r.x + 5, y: r.y + 4, width: Math.max(1, r.width - 10), height: Math.min(6, r.height / 3) },
-    3,
-    `${palette.light}a8`,
-  );
 }
 
 type MaterialPalette = { light: string; mid: string; dark: string; rim: string; detail: string };
 
-function materialPalette(material: PlatformMaterial, accent: string): MaterialPalette {
+function materialPalette(material: SurfaceMaterial, accent: string): MaterialPalette {
   switch (material) {
     case "mitochondrion":
       return {

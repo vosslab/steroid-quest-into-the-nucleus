@@ -1,83 +1,69 @@
 # Steroid Quest
 
-A keyboard-controlled arcade adventure for biology learners. Guide a red steroid through six illustrated cell regions, bind a receptor, and activate gene expression through movement and discovery, with no quiz gates.
+A three-key cell adventure for biology learners. Steer a red steroid through strange currents, bouncing organelles, and vesicle rides across six illustrated regions, then bind a receptor and activate gene expression.
 
 [Play Steroid Quest in your browser](https://vosslab.github.io/steroid-quest-into-the-nucleus/)
 
-Choose **Start adventure**, move right, and jump past the first membrane obstacles. Your red
-steroid crosses the lipid bilayer directly. Keep exploring until an RNA transcript emerges and
-**GENE EXPRESSION ACTIVATED** appears.
+Choose **Start adventure** and hold Right to cross the permeable lipid bilayer. Tap Space for an
+upward pulse, or hold it for gentler lift. The cell supplies currents, rebounds, and unexpected
+rides. Keep exploring until a growing RNA transcript announces **GENE EXPRESSION ACTIVATED**.
 
 <!-- screenshots:begin (managed by screenshot-docs) -->
 <!-- screenshots:end -->
 
 ## From steroid to RNA
 
-The journey turns a molecular pathway into six playable challenges:
-
-| Region | Your challenge | What the action shows |
+| Region | Signature encounter | Recovery |
 | --- | --- | --- |
-| Membrane | Cross the lipid strip, then bounce through a membrane pop | A steroid crosses the bilayer directly |
-| Cytoplasm | Squeeze through gel, launch through giant pinball, and try a crumbling bridge | A crowded cell separates you from the nucleus |
-| Nuclear envelope | Climb through pore suction, then explore a low-gravity loft | This route requires no key or pore-opening action |
-| Receptor | Bind, float through low gravity, and ride orbiting vesicle moons | Binding forms an active complex and unlocks an air jump |
-| DNA / HRE | Ride nucleosome orbits, cross crumbling chromatin, and launch toward the HRE | The complex recognizes a regulatory DNA region |
-| Transcription | Time three recruitment actions and watch RNA emerge | Machinery assembles and polymerase produces RNA |
+| Membrane | A circulating chamber turns into a backward sweep; a vesicle arrives with a new route | Visible downward stream and persistent route change |
+| Cytoplasm | Motor cargo, giant mitochondrion rebounds, and a curved ER channel | An optional cargo shortcut rejoins the route |
+| Nuclear envelope | Circulation sweeps past an open pore | A missed approach enters the return loop |
+| Receptor | Sticky contacts lead to the matching receptor | Pulse free; binding saves progress and enables DNA recognition |
+| DNA / HRE | Moving nucleosomes surround a passage that rearranges the flow | A shorter approach leads to a calm docking region |
+| Transcription | Three forgiving Space timing actions assemble machinery | Missed attempts repeat; polymerase then grows RNA |
 
-The red steroid stays visible inside the active complex. Optional fragments reward exploration.
-Gel squeezes open into giant organelle pinball, contact-armed platforms crumble, currents sweep
-through ER folds, and orbiting ledges circle above safe floors. Low-gravity fields change jump
-arcs. Occasional upper caches and a high DNA shortcut reward detours with a route back. These
-discoveries are authored and deterministic; clear collision lips and recovery floors mark the route.
-Retries are unlimited; checkpoints, collected fragments, and completed milestones survive a
-retry. Missed recruitment attempts repeat immediately. Short objectives and milestone captions
-support the action; reading never gates progress.
+The red steroid stays visible inside the receptor complex. Optional fragments reward exploration.
+Ordinary contact redirects or transports the player. Marked lysosome acid is destructive;
+world boundaries are safe. Retry keeps fragments, milestones, and completed route changes.
+Captions and reading remain optional.
 
 ## Quick start
 
-To play a local copy, install Node.js, npm, and Python 3, and use a browser with a keyboard.
-Run from the repository root:
+Use Node.js, npm, Python 3, and a browser with a keyboard. From the repository root:
 
 ```sh
 npm install
 ./run_web_server.sh
 ```
 
-The script builds and serves `dist/`. Open the local address printed in the terminal; the title
-screen offers **Start adventure**. An interactive macOS terminal opens the browser automatically.
+The script builds and serves `dist/`. Open its local address and choose **Start adventure**.
 Stop the server with Ctrl+C. Set `PORT` to choose a port.
 
 ## Controls and retries
 
 | Action | Keys |
 | --- | --- |
-| Move | Left / Right or A / D |
-| Jump | Space, W, or Up; release early for a shorter jump |
-| Extra air jump | Press jump again after receptor binding |
-| Pause / resume | Esc |
-| Retry checkpoint | R |
+| Apply horizontal force; brake and reverse | Left / Right |
+| Strong upward pulse | Press Space |
+| Gentle continuous upward thrust | Hold Space |
+| Coast through the fluid | Release all keys |
+| Pause / resume | Esc, or menu buttons |
+| Retry checkpoint | R, or menu button |
 | Navigate menus | Tab and Enter |
 
-The game pauses when it loses focus. Sound starts muted; enable it with the Sound button.
-Optional algorithmic sound gives each region its own textures and evolving motifs, with cues
-for movement, binding, recruitment, and RNA production.
-Progress lasts only for this page session; Replay starts a new journey. Touch controls and
-persistent saves are outside this release.
+There is no global gravity or downward key: follow the visible descending and returning currents.
+Sound defaults to on and begins with Start. The title, play, and pause screens offer a sound toggle.
+The game pauses and silences sound when it loses focus. Retry and Replay retain the session's
+sound choice. Replay starts a fresh campaign; progress is never stored across page sessions.
 
 ## About the biology
 
 This is a generic nuclear steroid-receptor example. Receptor locations vary. The open pore is
-this level's route; steroids do not universally require pores for nuclear entry. Gravity,
-platforms, and the air jump are arcade abstractions. The complex remains bound at the hormone
-response element (HRE) while machinery assembles at the nearby promoter and transcription begins.
-The steroid and binding pocket visibly adjust together. Their exaggerated flexibility is a
-schematic illustration that preserves the four-ring scaffold, rather than a chemical conversion.
-
-The revised campaign completes in about 1:52 on a practiced automated keyboard route, including
-all six stages, one deliberate checkpoint death, optional cache recovery, RNA production,
-ending, and Replay. Human first-play duration and enjoyment remain unmeasured. See
-[docs/active_plans/reports/surprise_walkthrough.md](docs/active_plans/reports/surprise_walkthrough.md)
-for the current route, rendered captures, and exact coverage.
+this level's route; steroids do not universally require pores for nuclear entry. Forces,
+transport rides, sticky contacts, and organelle rebounds are exaggerated arcade interpretations.
+The complex remains at the hormone response element (HRE) while machinery assembles near the
+promoter and transcription begins. Binding artwork preserves the red steroid's four-ring scaffold;
+its exaggerated shape adjustment represents accommodation, not a chemical conversion.
 
 ## Build and verify
 
@@ -85,16 +71,20 @@ for the current route, rendered captures, and exact coverage.
 ./check_codebase.sh
 ./build_github_pages.sh
 ./run_playwright_tests.sh --build
+source source_me.sh && python3 -m pytest tests/
 ```
 
-The build produces the GitHub Pages-ready `dist/` artifact. Remote publication is a separate
-step. The game uses TypeScript, SolidJS, and Canvas 2D, with procedural illustrations.
+The game uses TypeScript, SolidJS, Canvas 2D, procedural illustrations, and synthesized sound.
+The build produces the GitHub Pages-ready `dist/` artifact. Remote publication is separate;
+the live link can still show an earlier release until publication.
 
-- [docs/SOLID_MODEL.md](docs/SOLID_MODEL.md): simulation authority, UI lifecycle, and biological limits.
-- [docs/LEVEL_DESIGN.md](docs/LEVEL_DESIGN.md): typed section authoring, movement variety, and recovery.
-- [docs/PLAYWRIGHT_USAGE.md](docs/PLAYWRIGHT_USAGE.md): browser setup, tests, and capture usage.
-- [tests/TESTS_TYPESCRIPT_README.md](tests/TESTS_TYPESCRIPT_README.md): TypeScript verification tools.
-- [docs/CHANGELOG.md](docs/CHANGELOG.md): implementation history and validation notes.
+- [docs/SOLID_MODEL.md](docs/SOLID_MODEL.md): simulation authority, lifecycle, and biological limits.
+- [docs/LEVEL_DESIGN.md](docs/LEVEL_DESIGN.md): chamber authoring, forces, and recovery.
+- [docs/PLAYWRIGHT_USAGE.md](docs/PLAYWRIGHT_USAGE.md): browser setup and capture usage.
+- [docs/active_plans/reports/fluid_walkthrough.md](docs/active_plans/reports/fluid_walkthrough.md):
+  actual-controls walkthrough, captures, recovery observations, and measured limits.
+- [tests/TESTS_TYPESCRIPT_README.md](tests/TESTS_TYPESCRIPT_README.md): verification tools.
+- [docs/CHANGELOG.md](docs/CHANGELOG.md): implementation and validation history.
 
 ## License
 

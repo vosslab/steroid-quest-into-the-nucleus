@@ -1,5 +1,64 @@
 # Changelog
 
+## 2026-10-08
+
+### Additions and New Features
+
+- Add gravity-free viscous movement using horizontal force, upward Space pulses, held thrust,
+  local stream/vortex fields, exponential drag, and a bounded total speed.
+- Add circular player collision against circles, capsules, and rounded rectangles; temporary
+  sticky capture, curved transport paths, and contact/entry encounter phases.
+- Replace floor-based sections with reusable chamber recipes, explicit downward recovery,
+  persistent changed routes, and ordered calm checkpoints across the six-stage journey.
+- Show readable force directions, transport paths, rounded contact surfaces, and two-axis
+  camera tracking while preserving the red receptor complex and growing RNA finale.
+
+### Behavior or Interface Changes
+
+- Use Left, Right, and Space as the three gameplay keys. Keyboard repeat cannot add tap pulses
+  or recruitment attempts; pause and retry retain their existing menu and keyboard controls.
+- Default sound to on, initialize it through Start, and expose an accessible title sound toggle.
+  Retry and Replay retain the session preference; focus loss, pause, and mute clear sound.
+- Preserve fragments, biological milestones, and completed encounter phases through retry.
+  Checkpoint order is independent of horizontal position. Replay resets the campaign.
+- Receptor binding enables DNA recognition and saves an authored calm checkpoint.
+- Refresh README, level design, runtime ownership, human guidance, and design decisions for the
+  active-cell model. Forces and transport remain exaggerated arcade interpretations.
+
+### Fixes and Maintenance
+
+- Replace obsolete platform tests with behavior coverage of fluid movement, collision,
+  attachment release, progression, and lifecycle boundaries.
+- Retain build-artifact walkthrough observations and audio/frame lifecycle instrumentation.
+- Validate transport path clearance and actual checkpoint footprints, cap transport speed,
+  and include moving organelle speed in the collision substep budget.
+- Add an outward automatic sticky release, a pre-pore descent stream, and forgiving receptor
+  capture. Put the changed-route checkpoint outside immediate vesicle recapture.
+
+### Removals and Deprecations
+
+- Remove gravity, floor-supported jumping, coyote time, air-jump limits, crumble ledges, and
+  the earlier platform recipe contracts.
+
+### Decisions and Failures
+
+- Reject the initial level draft after authoring review found overwritten recipe forces,
+  unreachable receptor contact, and a backward sweep without a completion phase.
+- Make downward return routes reachable from upper pockets; a bottom-only current cannot
+  rescue a player in gravity-free fluid.
+
+### Developer Tests and Notes
+
+- Pass strict type checks, lint, formatting, 17 Node behavior tests, both built-artifact browser
+  smoke tests, and 1,112 Python repository hygiene checks.
+- Complete the actual-controls six-stage walkthrough in 121.60 simulation seconds, including
+  deliberate recovery probes, one acid death, optional cargo, and binding checkpoint retry.
+  The opening rebound occurs within three seconds of forward play.
+- Record 49 captures, a video, source/build hashes, audio output/silence, Replay preference
+  retention, one animation loop, stable canvas identity, and reduced-motion narrow menus in
+  [fluid_walkthrough.md](active_plans/reports/fluid_walkthrough.md). Human first-play enjoyment
+  remains unmeasured. Deliver the validated local preview; remote publication stays separate.
+
 ## 2026-10-07
 
 ### Additions and New Features

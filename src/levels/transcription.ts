@@ -1,37 +1,49 @@
 import type { LevelDefinition } from "../types/level";
 
-/** A single camera view keeps the docked complex, promoter, and emerging RNA together. */
+/** A calm final pocket preserves the three forgiving timing actions after HRE docking. */
 export const TRANSCRIPTION_LEVEL: LevelDefinition = {
   id: "transcription",
-  name: "Assemble the machinery. Release the RNA.",
-  objective: "Stay bound. Press jump in the bright timing window three times to recruit machinery.",
-  caption:
-    "The complex remains at the response element while machinery assembles at a nearby promoter.",
-  width: 960,
-  height: 540,
-  spawn: { x: 210, y: 360 },
+  name: "Transcription: release the RNA",
+  objective: "While docked, press Space in the bright window three times to recruit machinery.",
+  caption: "The complex stays at its response element while polymerase moves and RNA grows.",
+  width: 1600,
+  height: 620,
+  spawn: { x: 705, y: 430 },
   palette: { background: "#221b3c", foreground: "#a99dcf", accent: "#8ae5de" },
-  platforms: [{ id: "transcription-floor", x: 0, y: 390, width: 960, height: 150, kind: "solid" }],
+  obstacles: [],
+  flowZones: [],
+  transports: [],
+  encounters: [],
   hazards: [],
-  checkpoints: [],
+  checkpoints: [
+    {
+      id: "transcription-calm",
+      x: 670,
+      y: 400,
+      width: 115,
+      height: 85,
+      order: 0,
+      spawn: { x: 705, y: 430 },
+    },
+  ],
   collectibles: [],
   triggers: [
-    // The complex arrives on its matching element; no movement is needed after DNA docking.
-    { id: "transcription-docked-hre", kind: "hre", x: 190, y: 335, width: 68, height: 55 },
+    { id: "transcription-docked-hre", kind: "hre", x: 680, y: 405, width: 95, height: 75 },
     {
       id: "transcription-recruit",
       kind: "transcription",
-      x: 190,
-      y: 335,
-      width: 68,
-      height: 55,
+      x: 680,
+      y: 405,
+      width: 95,
+      height: 75,
       caption:
-        "Three bright-window jumps assemble the machinery. Watch the RNA emerge! Misses repeat immediately.",
+        "Three forgiving Space timing actions recruit the machinery. Watch polymerase travel and RNA emerge.",
     },
   ],
   decorations: [
-    { kind: "nucleosome", x: 65, y: 100, width: 140, height: 85 },
-    { kind: "dna", x: 85, y: 205, width: 770, height: 55 },
-    { kind: "nucleosome", x: 745, y: 105, width: 135, height: 85 },
+    { kind: "nucleosome", x: 105, y: 145, width: 160, height: 100 },
+    { kind: "dna", x: 85, y: 295, width: 1390, height: 62 },
+    { kind: "nucleosome", x: 1245, y: 145, width: 155, height: 100 },
+    { kind: "filament", x: 790, y: 385, width: 390, height: 45 },
   ],
 };

@@ -1,8 +1,8 @@
 import type { InputCommand, InputController, InputFrame } from "./types/input";
 
-const LEFT = new Set(["ArrowLeft", "KeyA"]);
-const RIGHT = new Set(["ArrowRight", "KeyD"]);
-const JUMP = new Set(["Space", "KeyW", "ArrowUp"]);
+const LEFT = new Set(["ArrowLeft"]);
+const RIGHT = new Set(["ArrowRight"]);
+const PULSE = new Set(["Space"]);
 const COMMANDS: Readonly<Record<string, InputCommand>> = { Escape: "pause", KeyR: "retry" };
 
 export function createInput(
@@ -10,10 +10,10 @@ export function createInput(
   onCommand: (command: InputCommand) => void,
 ): InputController {
   const held = new Set<string>();
-  let jumpPressed = false;
+  let pulsePressed = false;
   const clear = (): void => {
     held.clear();
-    jumpPressed = false;
+    pulsePressed = false;
   };
   const ownsFocus = (): boolean => document.activeElement === canvas;
   const keydown = (event: KeyboardEvent): void => {
@@ -22,7 +22,7 @@ export function createInput(
       !ownsFocus() ||
       (!LEFT.has(event.code) &&
         !RIGHT.has(event.code) &&
-        !JUMP.has(event.code) &&
+        !PULSE.has(event.code) &&
         !Object.prototype.hasOwnProperty.call(COMMANDS, event.code))
     )
       return;
@@ -32,7 +32,8 @@ export function createInput(
       if (!event.repeat) onCommand(command);
       return;
     }
-    if (JUMP.has(event.code) && !event.repeat && !held.has(event.code)) jumpPressed = true;
+    // ASVS 2.2.1: one physical Space press creates one pulse, regardless of auto-repeat.
+    if (PULSE.has(event.code) && !event.repeat && !held.has(event.code)) pulsePressed = true;
     held.add(event.code);
   };
   const keyup = (event: KeyboardEvent): void => {
@@ -59,10 +60,10 @@ export function createInput(
       const frame = {
         left: [...LEFT].some((key) => held.has(key)),
         right: [...RIGHT].some((key) => held.has(key)),
-        jumpHeld: [...JUMP].some((key) => held.has(key)),
-        jumpPressed,
+        pulseHeld: [...PULSE].some((key) => held.has(key)),
+        pulsePressed,
       };
-      jumpPressed = false;
+      pulsePressed = false;
       return frame;
     },
     clear,

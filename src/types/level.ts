@@ -1,61 +1,69 @@
-/** Shared contracts. World coordinates and velocities are measured in pixels and seconds. */
+/** World distances, velocities and durations use pixels and seconds. */
 export type StageId = "membrane" | "cytoplasm" | "envelope" | "receptor" | "dna" | "transcription";
 export type Point = { x: number; y: number };
 export type Rect = Point & { width: number; height: number };
-/** Visual treatment for a collision rectangle. Material never changes simulation geometry. */
-export type PlatformMaterial = "membrane" | "mitochondrion" | "reticulum" | "gel";
-/** Phase is measured in turns; periods are seconds. Legacy motion remains sinusoidal. */
-export type LinearMotion = {
-  kind?: "linear";
-  axis: "x" | "y";
-  distance: number;
-  period: number;
-  phase?: number;
-};
-/** The authored platform x/y is the orbit center for its top-left collision corner. */
-export type OrbitMotion = {
-  kind: "orbit";
-  radiusX: number;
-  radiusY: number;
-  period: number;
-  phase?: number;
-};
-export type PlatformMotion = LinearMotion | OrbitMotion;
-/** First top contact arms collapse; positive durations are seconds of simulation time. */
-export type CrumbleConfig = { delay: number; reformAfter: number };
-export type Platform = Rect & {
+export type SurfaceMaterial = "membrane" | "mitochondrion" | "reticulum" | "gel";
+export type Shape =
+  | { kind: "circle"; center: Point; radius: number }
+  | { kind: "capsule"; start: Point; end: Point; radius: number }
+  | (Rect & { kind: "roundedRect"; radius: number });
+/** Inclusive phase range; omitted bounds are open. Progress starts at zero. */
+export type PhaseCondition = { encounterId: string; min?: number; max?: number };
+export type Motion = { radiusX: number; radiusY: number; period: number; phase?: number };
+export type Obstacle = {
   id: string;
-  kind: "solid" | "oneway" | "bounce";
-  material?: PlatformMaterial;
-  /** Bounce top contact sets this velocity in pixels/second; author a negative y for lift. */
-  launch?: Point;
-  motion?: PlatformMotion;
-  /** Collapsed platforms are absent from collision; reform waits for player clearance. */
-  crumble?: CrumbleConfig;
+  shape: Shape;
+  material?: SurfaceMaterial;
+  response:
+    | { kind: "rebound"; restitution: number; impulse?: Point }
+    | { kind: "sticky"; duration: number };
+  motion?: Motion;
+  activeWhen?: PhaseCondition;
 };
-/** A current adds acceleration in pixels/second squared only while the player overlaps it. */
 export type FlowZone = Rect & {
   id: string;
   acceleration: Point;
-  /** Nonnegative gravity multiplier; overlapping fields use the minimum, defaulting to 1. */
-  gravityScale?: number;
-  /** Nonnegative damping per second; overlaps add, then velocity uses exp(-drag * dt). */
+  vortex?: { center: Point; strength: number };
   drag?: number;
+  activeWhen?: PhaseCondition;
+  label?: string;
 };
-export type Hazard = Rect & { id: string; kind: "enzyme" | "acid" | "spike" };
+/** Path points are player centers, interpolated along a smooth curve. */
+export type Transport = {
+  id: string;
+  kind: "vesicle" | "motor" | "channel";
+  path: readonly Point[];
+  duration: number;
+  radius: number;
+  wait: number;
+  releaseVelocity: Point;
+  activeWhen?: PhaseCondition;
+  label?: string;
+};
+export type EncounterStep = { region?: Rect; contactId?: string; caption: string; label?: string };
+export type Encounter = { id: string; steps: readonly EncounterStep[] };
+export type Hazard = Rect & { id: string; kind: "acid" };
 export type Collectible = Point & { id: string };
-export type CheckpointDefinition = Rect & { id: string; spawn: Point };
+/** Order is route progress, never an x-coordinate. Spawn is a calm player top-left. */
+export type CheckpointDefinition = Rect & {
+  id: string;
+  order: number;
+  spawn: Point;
+  activeWhen?: PhaseCondition;
+};
 export type Trigger = Rect & {
   id: string;
   kind: "exit" | "receptor" | "hre" | "transcription" | "caption";
   caption?: string;
+  activeWhen?: PhaseCondition;
+  /** Biological binding can save an explicitly authored calm spawn. */
+  checkpoint?: { order: number; spawn: Point };
 };
 /** Decorative geometry never determines collision. */
 export type Decoration = Rect & {
   kind:
     "mitochondrion" | "vesicle" | "filament" | "lipid" | "pore" | "receptor" | "dna" | "nucleosome";
 };
-/** Prefix content IDs with the stage ID to keep campaign-wide progress sets unambiguous. */
 export type LevelDefinition = {
   id: StageId;
   name: string;
@@ -65,8 +73,10 @@ export type LevelDefinition = {
   height: number;
   spawn: Point;
   palette: { background: string; foreground: string; accent: string };
-  platforms: readonly Platform[];
-  flowZones?: readonly FlowZone[];
+  obstacles: readonly Obstacle[];
+  flowZones: readonly FlowZone[];
+  transports: readonly Transport[];
+  encounters: readonly Encounter[];
   hazards: readonly Hazard[];
   checkpoints: readonly CheckpointDefinition[];
   collectibles: readonly Collectible[];

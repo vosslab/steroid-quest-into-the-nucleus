@@ -62,7 +62,12 @@ async function start(page: Page, observeLoop = false): Promise<Locator> {
   const canvas = page.getByLabel(/^Steroid Quest game world\./);
   await expect(canvas).toBeFocused();
   await expect(canvas).toHaveAttribute("data-phase", "playing");
-  await expect(canvas).toHaveAttribute("data-grounded", "true");
+  await expect(canvas).toHaveAttribute("data-player-vx", /-?\d+\.\d+/);
+  await expect(canvas).toHaveAttribute("data-player-vy", /-?\d+\.\d+/);
+  await expect(canvas).toHaveAttribute("data-attachment-id", "");
+  await expect(canvas).toHaveAttribute("data-attachment-kind", "");
+  await expect(canvas).toHaveAttribute("data-encounter-phases", /\{.*\}/);
+  await expect(canvas).toHaveAttribute("data-checkpoint-order", /\d+/);
   if (observeLoop) await expectSingleLoop(page);
   return canvas;
 }
@@ -139,22 +144,24 @@ test("losing keyboard focus pauses and clears held movement before resume", asyn
 }): Promise<void> => {
   const canvas = await start(page);
   const spawnX = await numberAttribute(canvas, "player-x");
-  await page.keyboard.down("d");
+  await page.keyboard.down("ArrowRight");
   await expect.poll(() => numberAttribute(canvas, "player-x")).toBeGreaterThan(spawnX);
-  // Tab is a real user focus change; D intentionally stays held across resume.
+  // Tab is a real user focus change; Arrow Right intentionally stays held across resume.
   await page.keyboard.press("Tab");
   await expect(page.getByRole("dialog", { name: "Journey paused" })).toBeVisible();
   await expect(canvas).toHaveAttribute("data-phase", "paused");
   await expectFrozen(page, canvas);
   await page.getByRole("button", { name: "Resume", exact: true }).click();
   await expect(canvas).toBeFocused();
-  // Allow existing momentum to stop, then prove no held input survives focus loss.
+  // Fluid drag preserves momentum briefly, so verify that released steering slows it instead
+  // of assuming a platforming-style immediate stop.
+  const releasedVelocity = Math.abs(await numberAttribute(canvas, "player-vx"));
   await renderedFrames(page, 30);
-  const stoppedX = await canvas.getAttribute("data-player-x");
-  await renderedFrames(page, 15);
-  await expect(canvas).toHaveAttribute("data-player-x", stoppedX ?? "");
-  await page.keyboard.up("d");
-  await page.keyboard.down("a");
-  await expect.poll(() => numberAttribute(canvas, "player-x")).toBeLessThan(Number(stoppedX));
-  await page.keyboard.up("a");
+  await expect
+    .poll(async () => Math.abs(await numberAttribute(canvas, "player-vx")))
+    .toBeLessThan(releasedVelocity);
+  await page.keyboard.up("ArrowRight");
+  await page.keyboard.down("ArrowLeft");
+  await expect.poll(() => numberAttribute(canvas, "player-vx")).toBeLessThan(0);
+  await page.keyboard.up("ArrowLeft");
 });

@@ -38,7 +38,6 @@ export function createAudio(): {
   let nextPulse = 0;
   let pulse = 0;
   let previousVy = 0;
-  let previousGrounded = true;
   let previousElapsed = 0;
   let previousPhase: SimulationState["phase"] = "title";
   let foregroundUntil = 0;
@@ -213,11 +212,34 @@ export function createAudio(): {
       if (event.type === "state" || event.type === "caption") return;
       foregroundUntil = context.currentTime + 0.4;
       switch (event.type) {
+        case "reset":
+          // Retry restores the player without replacing the session's audio preference or context.
+          clearVoices();
+          break;
         case "bounce":
           // A rubbery low pluck bends into a bright launch whistle.
           tone({ frequency: 125, bend: 480, duration: 0.24, amplitude: 0.075, modulation: 2.2 });
           tone({ frequency: 720, bend: 1080, delay: 0.055, duration: 0.19, amplitude: 0.035 });
           air(900, 0.12, 0.045);
+          break;
+        case "pulse":
+          tone({ frequency: 360, bend: 620, duration: 0.11, amplitude: 0.04, pan: -0.15 });
+          break;
+        case "capture":
+          air(780, 0.14, 0.045, -0.25);
+          tone({ frequency: 260, bend: 190, duration: 0.2, amplitude: 0.04, pan: -0.25 });
+          break;
+        case "release":
+          air(1250, 0.12, 0.05, 0.3);
+          tone({ frequency: 350, bend: 680, duration: 0.18, amplitude: 0.045, pan: 0.3 });
+          break;
+        case "encounter":
+          tone({
+            frequency: 310 * 2 ** (event.phase / 12),
+            bend: 520 * 2 ** (event.phase / 12),
+            duration: 0.24,
+            amplitude: 0.055,
+          });
           break;
         case "stage":
           air(1500 + event.levelIndex * 250, 0.45, 0.16);
@@ -297,7 +319,6 @@ export function createAudio(): {
               amplitude: 0.035,
               modulation: 0.6,
             });
-          if (state.player.grounded && !previousGrounded && previousVy > 150) air(400, 0.08, 0.035);
         }
         stage = currentStage;
         motif(state.player.vx);
@@ -305,7 +326,6 @@ export function createAudio(): {
       active = playing;
       stage = currentStage;
       previousVy = state.player.vy;
-      previousGrounded = state.player.grounded;
       previousElapsed = state.elapsed;
       previousPhase = state.phase;
     },

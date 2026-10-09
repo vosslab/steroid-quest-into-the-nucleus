@@ -52,7 +52,7 @@ never recreate the animation loop or mutate progression directly.
 ### Procedural canvas presentation
 
 **Decision.** Draw the six environments, player, and effects with Canvas 2D; use synthesized
-sound that starts muted.
+sound that starts with the Start gesture and defaults to on.
 
 **Why.** Procedural artwork gives the first release a complete journey without external assets.
 
@@ -71,7 +71,7 @@ inside the bound complex. Keep objectives short and learning text optional.
 while preserving the limits of the biological analogy.
 
 **Consequence.** Captions must not imply a universal receptor location or pore requirement.
-Air jumps, gravity, and platform geometry remain explicitly arcade abstractions.
+Transport rides, local forces, and organelle rebounds remain explicitly arcade abstractions.
 
 **Owner.** [SOLID_MODEL.md](SOLID_MODEL.md) and [src/types/level.ts](../src/types/level.ts).
 
@@ -86,22 +86,6 @@ artifact consumed by the existing preview and browser-test scripts.
 remain separate from remote GitHub Pages publication.
 
 **Owner.** [pipeline/build.mjs](../pipeline/build.mjs) and [README.md](../README.md).
-
-### Authored campaign pacing
-
-**Decision.** Expand cytoplasm, receptor, and DNA routes with distinct authored districts while
-preserving the controller and compact membrane, pore, and transcription milestones.
-
-**Why.** The initial real-controls route finished in roughly two minutes. Longer routes with
-different elevations and recovery shelves provide more play without slowing movement.
-
-**Consequence.** Checkpoints stay on supported safe shelves, and optional branches never gate
-progress. Keep measured expert-route time separate from the unverified 8-12 minute first-play
-target and human enjoyment.
-
-**Owner.** [src/levels/cell.ts](../src/levels/cell.ts),
-[src/levels/nucleus.ts](../src/levels/nucleus.ts), and
-[walkthrough.md](active_plans/reports/walkthrough.md).
 
 ### Schematic binding flexibility
 
@@ -122,7 +106,8 @@ supplied paper concerns particular unsaturated steroids; preserve that scope.
 ### Bounded algorithmic sound
 
 **Decision.** Synthesize regional textures, evolving quiet motifs, and molecular event cues
-through the existing runtime frame loop. Sound starts muted and requires an unmute gesture.
+through the existing runtime frame loop. Sound defaults to on; Start initializes audio unless
+the title-screen toggle is muted. Retry and Replay retain the session preference.
 
 **Why.** Procedural audio gives movement and milestones distinct character without audio assets,
 network dependencies, or a second timing loop.
@@ -135,85 +120,64 @@ disposal. Verify signal/resource behavior separately from listening appeal.
 **Owner.** [src/audio.ts](../src/audio.ts), [src/runtime.ts](../src/runtime.ts), and
 [SOLID_MODEL.md](SOLID_MODEL.md).
 
-### Cellular corridor materials
 
-**Decision.** Use optional platform materials for membrane, mitochondrion, reticulum, and gel
-art on solid collision rectangles. Clip cellular masses to those authored rectangles.
+### Gravity-free fluid controller
 
-**Why.** Crowded organelles and gel/tunnel passages should communicate traversable empty space
-and physical boundaries while retaining one collision authority.
+**Decision.** Use horizontal force, one upward impulse per Space press, weaker held upward thrust,
+local forces, and drag on both axes. Circular player collision resolves all sides of circles,
+capsules, and rounded rectangles with bounded speed and substeps.
 
-**Consequence.** Material changes only Canvas presentation. Existing platforms without a
-material retain their appearance; movement and collisions continue to use rectangle geometry.
+**Why.** Three simple inputs let the environment create unpredictable movement without additional
+abilities or a privileged landing surface.
 
-**Owner.** [src/types/level.ts](../src/types/level.ts), [src/drawing.ts](../src/drawing.ts), and
-[src/renderer.ts](../src/renderer.ts).
+**Consequence.** Receptor binding enables DNA recognition. Upward pocket escape depends on authored
+descent routes; test those routes through actual controls. Ordinary collisions redirect rather
+than kill. Only marked destructive regions cause death.
 
-### Explicit cellular movement fields
+**Owner.** [src/physics.ts](../src/physics.ts), [src/simulation.ts](../src/simulation.ts), and
+[src/constants.ts](../src/constants.ts).
 
-**Decision.** Author optional rectangular acceleration fields and bounce launch velocities in
-level data. The fixed-step simulation applies their movement and emits top-contact bounce events.
+### Chamber recipes and persistent encounters
 
-**Why.** Currents and directional launches give cellular obstacles a physical role while keeping
-one owner for collision and player motion. Visual materials retain their presentation-only role.
+**Decision.** Compile reusable current loops, transport relays, capture chambers, and channel
+transfers into shared obstacles, fields, transports, and encounter steps. Explicit phases change
+routes after contact or entry; levels do not own runtime scripts.
 
-**Consequence.** Sum overlapping accelerations before limiting velocity. Leaving a field preserves
-ordinary momentum; steering remains available. Pause stops simulation, and retry clears velocity.
-Holding the travel direction gradually relaxes speed above the normal running limit; opposite
-input keeps stronger steering so launches carry forward while remaining controllable.
-Rendering and sound consume bounce events without advancing physics. Authors keep checkpoints
-outside fields and verify launches, recovery, and route joins in the built game.
+**Why.** Memorable interactions can recur in stranger combinations without lengthening the
+campaign with predictable travel.
 
-**Owner.** [src/types/level.ts](../src/types/level.ts),
-[src/types/simulation.ts](../src/types/simulation.ts), and
-[src/simulation.ts](../src/simulation.ts).
-
-### Typed cellular section authoring
-
-**Decision.** Compile authored tunnel, terrace, bounce-chamber, and five semantic surprise specifications into the existing
-level arrays with local coordinates and stage-prefixed IDs.
-
-**Why.** Sections make route variation easier to compose while keeping geometry in TypeScript.
-
-**Consequence.** Compiler checks support authoring but do not prove traversal. Level sources own
-objectives, joins, optional paths, and recovery. The specification sheet describes composition
-without becoming a second editable campaign.
-
-**Owner.** [src/types/sections.ts](../src/types/sections.ts),
-[src/levels/section_specs.ts](../src/levels/section_specs.ts), and
-[LEVEL_DESIGN.md](LEVEL_DESIGN.md).
-
-### Authored escalating surprises
-
-**Decision.** Compose deterministic optional discoveries and distinct stage signatures from shared
-motion, collapse, launch, and field primitives. Teach an unfamiliar demand on safe support before
-combining familiar demands; preserve left, right, and jump throughout.
-
-**Why.** Surprise comes from changing spatial and movement expectations while preserving readable
-actions and quick recovery.
-
-**Consequence.** Collapse-chain timing supplies voluntary chase pressure above a safe catch floor.
-Optional express routes and shortcuts rejoin before required biological objectives. Orbiting ledges
-retain axis-aligned collision rectangles; passenger capture, lethal pursuing AI, rotated solid
-bodies, and falling rigid-body ribosomes remain separate deferred systems. Keep human enjoyment
-distinct from measured automated traversal.
+**Consequence.** Recipes describe entrance, exit, sequence, recovery, and optional branch. Temporary
+attachment has tap, held-thrust, and automatic release. Completed route changes survive retry,
+so finite backward sweeps lead to changed forward opportunities. Replay resets phases.
+Automatic sticky release supplies an outward impulse so an idle steroid drifts clear of the
+adhesive surface. Transport motion obeys the same speed and collision budget as free movement;
+its final path point is the release position. A blocked moving route releases locally.
 
 **Owner.** [src/types/level.ts](../src/types/level.ts),
 [src/types/sections.ts](../src/types/sections.ts), and [LEVEL_DESIGN.md](LEVEL_DESIGN.md).
 
-### Recipe-owned safe encounters
+### Ordered calm checkpoints
 
-**Decision.** Use five explicit semantic recipes with bounded controls and generated recovery:
-ribosome bridge, organelle pinball, vesicle express, orbit chamber, and low-gravity shaft.
+**Decision.** Checkpoints use explicit route order and calm spawn regions. Retry clears motion,
+attachments, and transient effects while preserving fragments, milestones, and encounter phases.
 
-**Why.** Authors can choose a movement situation without repeating rectangle placement or creating
-another runtime entity system. Shared arrays retain one simulation and collision authority.
+**Why.** Backward travel is part of progression and must not replace a later save point.
 
-**Consequence.** Static ends and catch floors support recovery. Checkpoints exclude moving,
-bouncing, and crumbling support, full motion envelopes, hazards, and generated/authored fields.
-Selected high caches use deterministic static steps and a return. Level data owns objectives
-and joins; built controls-only traversal remains necessary after compiler acceptance.
+**Consequence.** Safe release and spawn positions need clearance from moving obstacles and hazards.
+Calm regions allow inspection and braking without requiring floor support.
 
-**Owner.** [src/types/sections.ts](../src/types/sections.ts),
-[src/levels/surprise_patterns.ts](../src/levels/surprise_patterns.ts), and
-[src/levels/section_specs.ts](../src/levels/section_specs.ts).
+**Owner.** [src/types/simulation.ts](../src/types/simulation.ts) and
+[src/simulation.ts](../src/simulation.ts).
+
+### Pacing acceptance through play
+
+**Decision.** Target the first environmental interaction within roughly three seconds and changes
+of action every five to eight seconds of ordinary traversal. These are playtest targets.
+
+**Why.** The governing principle is continuing curiosity about the next strange cellular event.
+
+**Consequence.** Capture signature encounters, mistakes, recoveries, and traversal times through
+the built artifact. Automated completion proves a route; human enjoyment needs human play.
+
+**Owner.** [LEVEL_DESIGN.md](LEVEL_DESIGN.md) and
+[fluid_walkthrough.md](active_plans/reports/fluid_walkthrough.md).

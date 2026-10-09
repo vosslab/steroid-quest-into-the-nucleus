@@ -26,3 +26,7 @@ origin belongs there too. Rules: [REPO_STYLE.md](REPO_STYLE.md).
   chambers, squeezes, shafts, chase pressure, and temporary traversal rules.
 - Give each of the six stages a signature moment. Include rare optional vesicle express routes,
   organelle escapes, ribosome cascades, and absurd shortcuts.
+
+- Keep players wondering what strange thing the cell will throw at them next. Use three simple
+  gameplay keys, active viscous-cell movement, quick recovery, and a wild first level; replace
+  predictable stretches instead of lengthening the campaign. Sound defaults to on.

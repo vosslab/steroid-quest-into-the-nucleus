@@ -1,143 +1,60 @@
 import type {
   CheckpointDefinition,
   Collectible,
-  CrumbleConfig,
   Decoration,
+  Encounter,
+  EncounterStep,
   FlowZone,
   Hazard,
-  Platform,
-  PlatformMaterial,
+  Obstacle,
   Point,
+  Rect,
+  Transport,
   Trigger,
 } from "./level";
 
-/** Local section coordinates. Compilation assigns stage-prefixed IDs and horizontal offsets. */
-type SectionCommon = {
+/** A chamber is local authored space inside one compact stage. */
+export type ChamberCommon = {
   id: string;
-  caption: string;
-  checkpoints: readonly { x: number; floor: number }[];
+  bounds: Rect;
+  entrance: Point;
+  exit: Point;
+  sequence: readonly EncounterStep[];
+  recovery: Omit<FlowZone, "id">;
+  /** Explicit calm save area at a chamber join; recipes never infer one from an entrance. */
+  checkpoint?: Omit<CheckpointDefinition, "id" | "order">;
+  optionalBranch?: Rect;
+  obstacles?: readonly Omit<Obstacle, "id">[];
+  fields?: readonly Omit<FlowZone, "id">[];
+  transports?: readonly Omit<Transport, "id">[];
   hazards?: readonly Omit<Hazard, "id">[];
-  collectibles?: readonly { x: number; y: number }[];
+  collectibles?: readonly Omit<Collectible, "id">[];
   decorations?: readonly Decoration[];
-  flowZones?: readonly Omit<FlowZone, "id">[];
+  triggers?: readonly Omit<Trigger, "id">[];
 };
 
-export type TunnelSection = SectionCommon & {
-  kind: "tunnel";
+/** A visible circulation field that redirects a player into a later approach. */
+export type CurrentLoopChamber = ChamberCommon & { kind: "current_loop" };
+/** A motor or vesicle captures briefly, then drops the player at its authored exit. */
+export type TransportRelayChamber = ChamberCommon & { kind: "transport_relay" };
+/** Sticky contacts interrupt flow without creating a privileged landing surface. */
+export type CaptureChamber = ChamberCommon & { kind: "capture_chamber" };
+/** A channel is a fast curved route between two neighboring encounters. */
+export type ChannelTransferChamber = ChamberCommon & { kind: "channel_transfer" };
+
+export type ChamberSpec =
+  CurrentLoopChamber | TransportRelayChamber | CaptureChamber | ChannelTransferChamber;
+
+export type CompiledChambers = {
   width: number;
-  floor: number;
-  ceiling: number;
-  material: PlatformMaterial;
-  baffles: readonly {
-    x: number;
-    side: "upper" | "lower";
-    width: number;
-    depth: number;
-    material: PlatformMaterial;
-  }[];
-};
-
-export type TerraceSection = SectionCommon & {
-  kind: "terraces";
-  route: readonly { width: number; floor: number; gap: number }[];
-  material?: PlatformMaterial;
-  vesicles?: readonly {
-    x: number;
-    floor: number;
-    width: number;
-    distance: number;
-    period: number;
-    axis: "x" | "y";
-  }[];
-};
-
-/** A broad recovery floor, automatic spring, high solid landing, and descending exit step. */
-export type BounceSection = SectionCommon & {
-  kind: "bounce_chamber";
-  width: number;
-  floor: number;
-  springX: number;
-  springWidth: number;
-  landingX: number;
-  landingWidth: number;
-  landingRise: number;
-  launch?: Point;
-  material: PlatformMaterial;
-};
-
-export type SectionSpec = TunnelSection | TerraceSection | BounceSection | SurpriseSection;
-
-/** Each recipe owns a broad floor, static entry/exit, checkpoint, and optional return path. */
-type SurpriseSectionCommon = SectionCommon & {
-  width: number;
-  floor: number;
-  /** Compiler defaults reserve at least 180 units at each stationary end. */
-  approachWidth?: number;
-  recoveryWidth?: number;
-  /** The compiler generates an upper collectible cache and its route back to the floor. */
-  secret?: "none" | "high_cache";
-};
-
-export type RibosomeBridgeSection = SurpriseSectionCommon & {
-  kind: "ribosome_bridge";
-  bridgeRise: number;
-  span: number;
-  count: number;
-  crumble: CrumbleConfig;
-};
-
-export type OrganellePinballSection = SurpriseSectionCommon & {
-  kind: "organelle_pinball";
-  bumperCount: number;
-  launch: Point;
-  landingRise: number;
-};
-
-export type VesicleExpressSection = SurpriseSectionCommon & {
-  kind: "vesicle_express";
-  ceiling: number;
-  acceleration: Point;
-  drag?: number;
-};
-
-export type OrbitChamberSection = SurpriseSectionCommon & {
-  kind: "orbit_chamber";
-  orbitRise: number;
-  radiusX: number;
-  radiusY: number;
-  period: number;
-  platformCount: number;
-};
-
-export type LowGravityShaftSection = SurpriseSectionCommon & {
-  kind: "low_gravity_shaft";
-  rise: number;
-  gravityScale: number;
-  ledgeCount: number;
-};
-
-/** Reusable cellular encounter recipes compiled into ordinary simulation geometry. */
-export type SurpriseSection =
-  | RibosomeBridgeSection
-  | OrganellePinballSection
-  | VesicleExpressSection
-  | OrbitChamberSection
-  | LowGravityShaftSection;
-
-/** The compiler only lowers authored sections to the existing simulation contracts. */
-export type CompiledSections = {
-  width: number;
-  platforms: Platform[];
+  height: number;
+  obstacles: Obstacle[];
   flowZones: FlowZone[];
+  transports: Transport[];
+  encounters: Encounter[];
   hazards: Hazard[];
   checkpoints: CheckpointDefinition[];
   collectibles: Collectible[];
   decorations: Decoration[];
   triggers: Trigger[];
 };
-
-/** Local recipe output uses the shared platform/field contracts without another entity model. */
-export type SurpriseGeometry = Pick<
-  CompiledSections,
-  "platforms" | "flowZones" | "collectibles" | "decorations"
-> & { checkpoints: readonly { x: number; floor: number }[] };
