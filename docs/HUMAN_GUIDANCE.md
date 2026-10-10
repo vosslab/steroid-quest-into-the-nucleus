@@ -27,6 +27,11 @@ origin belongs there too. Rules: [REPO_STYLE.md](REPO_STYLE.md).
 - Give each of the six stages a signature moment. Include rare optional vesicle express routes,
   organelle escapes, ribosome cascades, and absurd shortcuts.
 
-- Keep players wondering what strange thing the cell will throw at them next. Use three simple
-  gameplay keys, active viscous-cell movement, quick recovery, and a wild first level; replace
-  predictable stretches instead of lengthening the campaign. Sound defaults to on.
+- Keep Left, Right, and Space as the core controls. Offer optional tiny Up/Down thrust for
+  adjustment; the earlier Shift idea is superseded.
+- Aim for an 8-12 minute campaign. Players must complete required encounters and checkpoints
+  before reaching the end; biological objects mark destinations and lead into zoom transitions.
+- Keep transcription as its short three-action payoff. Finish every milestone through the manager,
+  subagents, and automation without depending on human availability.
+- Keep players wondering what strange thing the cell will throw at them next. Preserve active
+  viscous-cell movement, quick recovery, a wild first level, and sound on by default.

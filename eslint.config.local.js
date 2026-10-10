@@ -17,5 +17,9 @@
 //     },
 //   ];
 //
-// Default: no local overrides.
-export default [];
+// Generated Playwright output is immutable browser code, not repository source.
+export default [
+  {
+    ignores: ["test-results/**", "playwright-report/**"],
+  },
+];

@@ -4,33 +4,36 @@ import type {
   ChannelTransferChamber,
   CurrentLoopChamber,
   TransportRelayChamber,
+  ChamberCommon,
 } from "../types/sections";
 
-type Base = Pick<CurrentLoopChamber, "id" | "bounds" | "entrance" | "exit" | "sequence">;
+type Base = Omit<ChamberCommon, "recovery" | "required"> &
+  ({ required: true; completionCheckpoint: Point } | { required: false });
 
 /** The shared recipes make downward recovery explicit instead of relying on a floor. */
 export function currentLoop(base: Base, acceleration: Point): CurrentLoopChamber {
-  const { bounds } = base;
+  const { width, height } = base;
   return {
     ...base,
     kind: "current_loop",
     recovery: {
-      x: bounds.x + bounds.width - 55,
-      y: bounds.y,
+      x: width - 55,
+      y: 0,
       width: 55,
-      height: bounds.height,
+      height: height,
       acceleration: { x: 0, y: 360 },
       label: "downward return stream",
     },
     fields: [
       {
-        x: bounds.x + 60,
-        y: bounds.y,
-        width: bounds.width - 120,
-        height: bounds.height * 0.7,
+        id: "circulation",
+        x: 60,
+        y: 0,
+        width: width - 120,
+        height: height * 0.7,
         acceleration,
         vortex: {
-          center: { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 },
+          center: { x: width / 2, y: height / 2 },
           strength: 220,
         },
         label: "circulating current",
@@ -44,20 +47,21 @@ export function transportRelay(
   path: readonly Point[],
   kind: "vesicle" | "motor" = "vesicle",
 ): TransportRelayChamber {
-  const { bounds } = base;
+  const { width, height } = base;
   return {
     ...base,
     kind: "transport_relay",
     recovery: {
-      x: bounds.x + bounds.width - 55,
-      y: bounds.y,
+      x: width - 55,
+      y: 0,
       width: 55,
-      height: bounds.height,
+      height: height,
       acceleration: { x: 0, y: 340 },
       label: "return stream",
     },
     transports: [
       {
+        id: "cargo",
         kind,
         path,
         duration: 2.4,
@@ -71,20 +75,21 @@ export function transportRelay(
 }
 
 export function captureChamber(base: Base, sticky: Rect): CaptureChamber {
-  const { bounds } = base;
+  const { width, height } = base;
   return {
     ...base,
     kind: "capture_chamber",
     recovery: {
-      x: bounds.x + bounds.width - 55,
-      y: bounds.y,
+      x: width - 55,
+      y: 0,
       width: 55,
-      height: bounds.height,
+      height: height,
       acceleration: { x: 0, y: 320 },
       label: "downward return stream",
     },
     obstacles: [
       {
+        id: "sticky",
         shape: {
           kind: "roundedRect",
           ...sticky,
@@ -97,20 +102,21 @@ export function captureChamber(base: Base, sticky: Rect): CaptureChamber {
 }
 
 export function channelTransfer(base: Base, path: readonly Point[]): ChannelTransferChamber {
-  const { bounds } = base;
+  const { width, height } = base;
   return {
     ...base,
     kind: "channel_transfer",
     recovery: {
-      x: bounds.x + bounds.width - 55,
-      y: bounds.y,
+      x: width - 55,
+      y: 0,
       width: 55,
-      height: bounds.height,
+      height: height,
       acceleration: { x: 0, y: 360 },
       label: "return stream",
     },
     transports: [
       {
+        id: "channel",
         kind: "channel",
         path,
         duration: 1.1,

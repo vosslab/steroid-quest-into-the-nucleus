@@ -197,6 +197,39 @@ h1 {
   font-size: 13px;
   line-height: 1.35;
 }
+.required-objective {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px 10px;
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.required-count {
+  color: var(--mint-bright);
+  font-weight: 800;
+  white-space: nowrap;
+}
+.encounter-segments {
+  display: flex;
+  gap: 4px;
+}
+.encounter-segments i {
+  width: 15px;
+  height: 5px;
+  border: 1px solid #84ada4;
+  border-radius: 3px;
+  background: #24444c;
+}
+.encounter-segments i.complete {
+  background: var(--mint);
+  border-color: var(--mint);
+}
+.required-action {
+  color: var(--gold);
+  font-weight: 700;
+}
 .hud-tools {
   display: flex;
   flex: 0 0 auto;
@@ -343,6 +376,20 @@ canvas {
 }
 .start-controls > span {
   min-width: 0;
+}
+.start-controls .optional-controls {
+  flex-basis: 100%;
+  color: #bcd3cd;
+}
+.start-controls .optional-controls b {
+  display: inline;
+  margin-left: 7px;
+  font-weight: 600;
+  color: #d0e4dd;
+}
+.compact > .pause-controls {
+  font-size: 11px;
+  line-height: 1.9;
 }
 .start-controls b {
   display: block;
@@ -621,6 +668,13 @@ details p {
   .hud-tools {
     width: 100%;
   }
+  .required-objective {
+    gap: 5px 8px;
+    font-size: 10px;
+  }
+  .required-action {
+    flex-basis: 100%;
+  }
   .collection {
     margin-right: auto;
   }
@@ -642,6 +696,7 @@ details p {
   }
   .overlay {
     padding: 19px 12px;
+    overflow-y: auto;
   }
   .menu-card h2 {
     margin: 9px 0 13px;

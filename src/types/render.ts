@@ -3,6 +3,8 @@ import type { GameEvent, SimulationState } from "./simulation";
 export type RenderSnapshot = {
   state: Readonly<SimulationState>;
   level: LevelDefinition;
+  /** Readonly entrance-preview data, never another running simulation. */
+  nextLevel: Readonly<LevelDefinition> | undefined;
   canvasWidth: number;
   canvasHeight: number;
   reducedMotion: boolean;

@@ -1,5 +1,5 @@
 import { label, rounded } from "./drawing";
-import type { FlowZone } from "./types/level";
+import type { FlowZone, Rect } from "./types/level";
 
 function arrow(
   ctx: CanvasRenderingContext2D,
@@ -29,6 +29,7 @@ export function cellularCurrent(
   zone: FlowZone,
   time: number,
   reducedMotion: boolean,
+  viewport?: Rect,
 ): void {
   const magnitude = Math.hypot(zone.acceleration.x, zone.acceleration.y);
   const fill = zone.vortex ? "#9877df16" : "#64e1df12";
@@ -41,8 +42,17 @@ export function cellularCurrent(
     drawVortex(ctx, zone, time, reducedMotion);
   } else if (magnitude > 0) {
     const angle = Math.atan2(zone.acceleration.y, zone.acceleration.x);
-    for (let y = zone.y + 30; y < zone.y + zone.height; y += 58) {
-      for (let x = zone.x + 32; x < zone.x + zone.width; x += 74) {
+    const firstY =
+      zone.y + 30 + Math.max(0, Math.floor(((viewport?.y ?? zone.y) - zone.y - 30) / 58)) * 58;
+    const firstX =
+      zone.x + 32 + Math.max(0, Math.floor(((viewport?.x ?? zone.x) - zone.x - 32) / 74)) * 74;
+    const lastY = Math.min(
+      zone.y + zone.height,
+      viewport ? viewport.y + viewport.height : Infinity,
+    );
+    const lastX = Math.min(zone.x + zone.width, viewport ? viewport.x + viewport.width : Infinity);
+    for (let y = firstY; y < lastY; y += 58) {
+      for (let x = firstX; x < lastX; x += 74) {
         const offset = reducedMotion ? 0 : ((time * 34 + x * 0.12 + y * 0.08) % 32) - 16;
         arrow(ctx, x + Math.cos(angle) * offset, y + Math.sin(angle) * offset, angle, "#b5fff1b8");
       }

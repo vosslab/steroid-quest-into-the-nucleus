@@ -2,6 +2,7 @@ import { createAudio } from "./audio";
 import { FIXED_STEP } from "./constants";
 import { createInput } from "./input";
 import { createRenderer } from "./renderer";
+import { getEncounterProgress } from "./progression";
 import { createSimulation } from "./simulation";
 import type { Runtime, RuntimeOptions } from "./types/runtime";
 
@@ -16,6 +17,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   const audio = createAudio();
   const renderer = createRenderer(canvas);
   const simulation = createSimulation(levels, (event) => {
+    if (event.type === "transition-start") input.clear();
     audio.play(event);
     renderer.play(event);
     onEvent(event);
@@ -75,6 +77,9 @@ export function createRuntime(options: RuntimeOptions): Runtime {
 
   const observeState = (): void => {
     const state = simulation.state;
+    const level = levels[state.levelIndex];
+    const progress = level && getEncounterProgress(level, state.encounterPhases);
+    const nextLevel = levels[state.levelIndex + 1];
     // Read-only browser observations. The simulation never reads these attributes.
     canvas.dataset.phase = state.phase;
     canvas.dataset.stage = levels[state.levelIndex]?.id ?? "";
@@ -94,6 +99,21 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     canvas.dataset.checkpoint = state.checkpoint.id;
     canvas.dataset.checkpointOrder = String(state.checkpoint.order);
     canvas.dataset.collected = String(state.collectedIds.size);
+    canvas.dataset.requiredCompleted = String(progress?.completed ?? 0);
+    canvas.dataset.requiredTotal = String(progress?.total ?? 0);
+    canvas.dataset.currentEncounterId = progress?.current?.id ?? "";
+    canvas.dataset.currentObjective = progress?.current?.objective ?? level?.objective ?? "";
+    canvas.dataset.destinationId = level?.destination?.id ?? "";
+    canvas.dataset.destinationReady = String(
+      Boolean(level?.destination && nextLevel && progress?.ready) &&
+        (nextLevel?.id !== "dna" || state.receptorBound) &&
+        (nextLevel?.id !== "transcription" || (state.receptorBound && state.hreBound)),
+    );
+    canvas.dataset.destinationX = level?.destination?.center.x.toFixed(2) ?? "";
+    canvas.dataset.destinationY = level?.destination?.center.y.toFixed(2) ?? "";
+    canvas.dataset.transitionElapsed = state.transition?.elapsed.toFixed(4) ?? "";
+    canvas.dataset.transitionDuration = state.transition?.duration.toFixed(4) ?? "";
+    canvas.dataset.transitionDestinationId = state.transition?.destinationId ?? "";
   };
   const frame = (time: number): void => {
     if (disposed) return;
@@ -119,6 +139,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       renderer.draw({
         state: simulation.state,
         level,
+        nextLevel: levels[simulation.state.levelIndex + 1],
         canvasWidth: VIEW_WIDTH,
         canvasHeight: VIEW_HEIGHT,
         reducedMotion,

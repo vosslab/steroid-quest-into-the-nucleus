@@ -1,5 +1,133 @@
 # Changelog
 
+## 2026-10-09
+
+### Additions and New Features
+
+- Add optional held Up/Down fine control during free movement while preserving primary
+  Left/Right/Space behavior, attachment release, and transcription actions.
+- Add chamber-local placement translation, stable primitive and step names, and named-step
+  phase helpers across the four existing recipe families.
+- Add ordered required encounter progress, natural transport-delivery steps, completion saves,
+  and biological destination capture with a one-second simulation-timed transition.
+- Author three nuclear-envelope encounters around the continuously open pore, immediate crossing
+  save, inner return, curved connector, and receptor destination. Author four receptor encounters
+  around sticky escape, immediate matching-binding save, changed passage, and bound-complex transfer.
+- Author five cytoplasm encounters around motor delivery, giant mitochondrial rebound, folded ER
+  channels, countercurrent relay, and crowded vesicles. Author five DNA/HRE encounters around moving
+  chromatin, changed passage/flow, a rising channel, and broad calm matching-HRE docking.
+- Add README screenshots of the giant mitochondrial flank and ready nuclear destination from
+  the accepted independent full-campaign browser run.
+- Add an independently authored actual-keyboard controller, evidence harness, and assessment
+  for full-campaign standard-route completion and pacing.
+
+### Behavior or Interface Changes
+
+- Advance only the current required encounter; optional exploration cannot bypass completion.
+  Receptor/HRE milestones respect current-step ordering. Retry/death retain completed phases,
+  biological milestones, fragments, and opened routes; Replay clears campaign progress.
+- Keep the source stage authoritative through destination presentation until stage commitment.
+  Pause freezes transitions, Retry cancels capture, and reduced motion uses a crossfade.
+- Update player instructions, chamber authoring, runtime ownership, and settled decisions for
+  the expanded journey. Preserve the confirmed live link and managed visual block in README.
+
+### Fixes and Maintenance
+
+- Derive pending delivery guidance from actual attachment state through one shared HUD/world/
+  compass cue. Detached players see a recapture target; matching attachment keeps delivery
+  guidance. Initial motor/vesicle capture follows the moving cargo's current position.
+- Extract membrane composition and shared named-phase/stream/rebound authoring helpers while
+  retaining the four existing chamber recipe families.
+- Extract pure normal/transition framing into the camera helper and interpolate destination
+  anchors in screen space during zoom. Preserve normal tracking and keep captured targets visible
+  near world edges. Reduced motion retains normal framing and a crossfade only.
+- Exclude generated `test-results/` and `playwright-report/` artifacts in the consumer ESLint
+  configuration. Authored tests retain their lint coverage; immutable controller snapshots remain
+  evidence artifacts.
+- Replace the temporary browser harness's fixed encounter-count assertion with required-ID
+  completion guards, and render ignored development-probe paths as inline code in author reports.
+- Archive nine released temporary sources, including recovery preflight and finalized recovery/
+  reduced-motion browser runners, byte-for-byte under
+  `test-results/expansion/source_probes/`
+  with a hash manifest and restore instructions, then remove their temporary originals. The archive
+  preserves source provenance separately from finalized browser acceptance. Runner hashes match
+  their finalized snapshots; all nine originals are removed and `tests/_temp/` is empty.
+
+### Decisions and Failures
+
+- Supersede the earlier compact-campaign direction with the 8-12 minute standard-route target.
+  Add active encounters while preserving movement speed; compulsory waits, repeated failures,
+  and empty travel do not establish pacing.
+- Keep the 121.60-second fluid walkthrough identified as historical evidence for the earlier
+  campaign. It does not establish expanded-campaign acceptance.
+- Retain the unchanged short transcription finale. Its 10-20 second planning allocation is an
+  estimate, separate from the hard 480-720 active-second gate for each complete standard route.
+  Report actual timing; efficient recruitment does not justify inserted delays.
+
+### Developer Tests and Notes
+
+- The movement/authoring foundation passes 31 focused Node behavior tests and both browser smoke
+  tests after independent specification and quality assessment. These checks do not establish
+  expanded campaign pacing or final integration acceptance.
+- The intermediate frozen membrane source passes `./check_codebase.sh` (31 behavior tests,
+  type checks, lint, and formatting), `./build_github_pages.sh`, and 1,126 Python checks.
+  Preserve these intermediate checks separately from the final integrated results below.
+- The five edited documentation files pass ten scoped Markdown-link/ASCII checks, and README
+  passes all six landing-paragraph checks.
+- Add four focused helper tests for delivery/reboarding cue semantics. The membrane's four
+  required encounters have source development measurements in
+  [EXPANSION_MEMBRANE.md](active_plans/reports/EXPANSION_MEMBRANE.md); source timing remains
+  separate from final built-artifact pacing acceptance.
+- Add two camera invariant tests for captured-target visibility and reduced-motion framing.
+  All 37 Node behavior tests pass independently. Fresh rendered assessment accepts the corrected
+  membrane transition across 32 capture/zoom/blend/commit frames: steroid and destination remain
+  visible, source HUD commits once, and canvas/animation-loop identity stays stable. The other four
+  transitions and reduced-motion campaign evidence have separate assessment ownership.
+- Accept the membrane actual-controls measurement at 104.02 active seconds; an independent
+  diagnostic route takes 110.47 seconds without idle padding. These are earlier prefix measurements.
+- Source-only three-key probes measure 78.5083 seconds for the envelope and 91.175 seconds for
+  the receptor, including destination commitment. See
+  [EXPANSION_ENVELOPE.md](active_plans/reports/EXPANSION_ENVELOPE.md) and
+  [EXPANSION_RECEPTOR.md](active_plans/reports/EXPANSION_RECEPTOR.md). These development measurements
+  do not establish actual-key browser acceptance or full campaign pacing.
+- Source-only three-key probes measure 116.825 seconds for cytoplasm and 119.033 seconds for
+  DNA/HRE, including destination commitment. See
+  [EXPANSION_CYTOPLASM.md](active_plans/reports/EXPANSION_CYTOPLASM.md) and
+  [EXPANSION_DNA.md](active_plans/reports/EXPANSION_DNA.md). Source development measurements remain
+  separate from integrated browser behavior and full campaign pacing.
+- The frozen integrated artifact passes `./check_codebase.sh` with 38 Node tests and type/lint/
+  format checks, the Pages build, both `./run_playwright_tests.sh --build` smoke tests, 1,136 Python
+  checks, and `git diff --check`. Final Python/diff and fresh integration review after documentation
+  closure are tracked in [EXPANSION_ACCEPTANCE.md](active_plans/reports/EXPANSION_ACCEPTANCE.md).
+- The independent full-campaign route completes in 579.57 active seconds with no report or
+  capture errors, within the 480-720 second pacing gate. Screenshot bytes match their accepted
+  captures and source/build provenance is unchanged. All six stages and 21 required encounters
+  complete without death or artificial padding; retain 117 captures, 4,952 readonly observations,
+  1,614 key events, and actual 4.86-second transcription timing in
+  [EXPANSION_INDEPENDENT.md](active_plans/reports/EXPANSION_INDEPENDENT.md).
+- The reference route completes all six stages and 21 required encounters in 525.02 active seconds
+  (8:45.02), without death, errors, drift, or artificial padding. Gross start-to-ending elapsed is
+  525.96 seconds, including 0.94 seconds of initial stationary audio preflight. Retain 138 captures,
+  controller traces, provenance, all completion saves, and actual 4.77-second transcription timing
+  in [EXPANSION_WALKTHROUGH.md](active_plans/reports/EXPANSION_WALKTHROUGH.md). Both full standard-route
+  pacing gates pass.
+- Recovery 06 passes all 12 required actual-controls cases with zero browser errors or hash drift,
+  including early biological target denial, premature delivery recovery, bound-save Retry,
+  pause/focus transition freezing, and held-Space behavior. One deliberate marked-acid death retains
+  the collected fragment; the separate bound-save Retry preserves receptor binding. The final run
+  completes all 21 required encounters and three recruitment actions. Its deliberate probes do
+  not establish standard pacing. See
+  [EXPANSION_RECOVERY.md](active_plans/reports/EXPANSION_RECOVERY.md); the optional early-envelope
+  contact diagnostic remains outside the required case count and carries no success claim.
+- Fresh rendered assessment passes all five normal transitions, bound-complex continuity,
+  authentic reduced-motion DNA crossfade, and planned narrow title/pause access in
+  [EXPANSION_FINAL_VISUAL.md](active_plans/reports/EXPANSION_FINAL_VISUAL.md). Human first-play
+  enjoyment remains unmeasured. The supplementary reduced-motion route also completes all five
+  transitions and 21 encounters without errors or drift; it does not replace the required recovery
+  case. Final milestone review status remains in
+  [EXPANSION_ACCEPTANCE.md](active_plans/reports/EXPANSION_ACCEPTANCE.md).
+- Final M1-M4 integration is accepted. Archive the completed journey plan byte-for-byte at `docs/archive/longer_cellular_journeys.md` and update its current documentation links. The frozen integrated checks passed 38 Node tests, both browser smoke tests, and 1,139 Python checks.
+
 ## 2026-10-08
 
 ### Additions and New Features

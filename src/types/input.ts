@@ -1,6 +1,8 @@
 export type InputFrame = {
   left: boolean;
   right: boolean;
+  up: boolean;
+  down: boolean;
   pulsePressed: boolean;
   pulseHeld: boolean;
 };

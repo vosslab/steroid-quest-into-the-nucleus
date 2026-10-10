@@ -9,10 +9,15 @@ import {
   rounded,
   steroid,
 } from "./drawing";
+import { cameraFor, type Camera } from "./camera";
 import { cellularDebris } from "./debris";
+import { biologicalDestination } from "./destination_art";
+import { currentAction, shapeBounds } from "./journey_presentation";
 import { cellularCurrent, contactSpark, reboundRipple } from "./kinetic_art";
 import { isActive, pathPoint, shapeAt, transportPosition, transportProgress } from "./physics";
+import { getEncounterProgress } from "./progression";
 import { transcriptionPayoff, transportBody, transportRoute } from "./surprise_art";
+import type { Rect } from "./types/level";
 import type { RenderSnapshot, Renderer } from "./types/render";
 import type { GameEvent } from "./types/simulation";
 
@@ -110,6 +115,52 @@ function drawWorld(
   transients: readonly Transient[],
   bindingStarted: number | undefined,
 ): void {
+  drawScene(ctx, snapshot, transients, bindingStarted);
+  const transition = snapshot.state.transition;
+  if (transition && snapshot.nextLevel) {
+    const blend = Math.max(0, Math.min(1, (transition.elapsed / transition.duration - 0.4) / 0.6));
+    if (blend > 0) {
+      // The entrance is readonly scenery. No second simulation or animation loop is created.
+      const next = snapshot.nextLevel;
+      const preview: RenderSnapshot = {
+        ...snapshot,
+        level: next,
+        nextLevel: undefined,
+        state: {
+          ...snapshot.state,
+          transition: undefined,
+          levelTime: 0,
+          player: { ...snapshot.state.player, ...next.spawn, vx: 0, vy: 0, attachment: undefined },
+        },
+      };
+      ctx.save();
+      ctx.globalAlpha = blend;
+      drawScene(ctx, preview, [], bindingStarted);
+      ctx.restore();
+    }
+  }
+  drawVignette(ctx);
+  if (transition) {
+    label(
+      ctx,
+      snapshot.level.destination?.label ?? "Continuing the journey",
+      480,
+      50,
+      "#d9fff1",
+      15,
+    );
+  } else {
+    drawActionCompass(ctx, snapshot, cameraFor(snapshot));
+  }
+  drawTimingPanel(ctx, snapshot);
+}
+
+function drawScene(
+  ctx: CanvasRenderingContext2D,
+  snapshot: RenderSnapshot,
+  transients: readonly Transient[],
+  bindingStarted: number | undefined,
+): void {
   const { level, state, reducedMotion } = snapshot;
   const time = state.levelTime;
   const camera = cameraFor(snapshot);
@@ -120,12 +171,19 @@ function drawWorld(
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
   cellularDebris(ctx, level, camera.x, camera.y, reducedMotion ? 0 : time);
   ctx.save();
+  ctx.scale(camera.scale, camera.scale);
   ctx.translate(-camera.x, -camera.y);
-  drawFieldLayer(ctx, snapshot, time);
-  drawDecorationLayer(ctx, snapshot, time);
-  drawTransportLayer(ctx, snapshot, time);
-  drawObstacleLayer(ctx, snapshot, time);
-  drawProgressMarkers(ctx, snapshot, time);
+  const viewport = {
+    x: camera.x - 160,
+    y: camera.y - 160,
+    width: VIEW_WIDTH / camera.scale + 320,
+    height: VIEW_HEIGHT / camera.scale + 320,
+  };
+  drawFieldLayer(ctx, snapshot, time, viewport);
+  drawDecorationLayer(ctx, snapshot, time, viewport);
+  drawTransportLayer(ctx, snapshot, time, viewport);
+  drawObstacleLayer(ctx, snapshot, time, viewport);
+  drawProgressMarkers(ctx, snapshot, time, viewport);
   if (state.hreBound && level.id === "transcription") drawTranscription(ctx, snapshot);
   drawPlayer(ctx, snapshot, bindingStarted);
   for (const transient of transients) {
@@ -135,32 +193,27 @@ function drawWorld(
     else contactSpark(ctx, transient.x, transient.y, age);
   }
   ctx.restore();
-  drawVignette(ctx);
-  drawTimingPanel(ctx, snapshot);
 }
 
-function cameraFor(snapshot: RenderSnapshot): { x: number; y: number } {
-  const { level, state } = snapshot;
-  const player = state.player;
-  const lookX = Math.max(-90, Math.min(90, player.vx * 0.19));
-  const lookY = Math.max(-70, Math.min(70, player.vy * 0.15));
-  const targetX = player.x + player.width / 2 - VIEW_WIDTH / 2 + lookX;
-  const targetY = player.y + player.height / 2 - VIEW_HEIGHT / 2 + lookY;
-  return {
-    x: Math.max(-24, Math.min(Math.max(0, level.width - VIEW_WIDTH) + 24, targetX)),
-    y: Math.max(-24, Math.min(Math.max(0, level.height - VIEW_HEIGHT) + 24, targetY)),
-  };
+function visible(bounds: Rect, viewport: Rect): boolean {
+  return (
+    bounds.x < viewport.x + viewport.width &&
+    bounds.x + bounds.width > viewport.x &&
+    bounds.y < viewport.y + viewport.height &&
+    bounds.y + bounds.height > viewport.y
+  );
 }
 
 function drawFieldLayer(
   ctx: CanvasRenderingContext2D,
   snapshot: RenderSnapshot,
   time: number,
+  viewport: Rect,
 ): void {
   const { level, state, reducedMotion } = snapshot;
   for (const zone of level.flowZones) {
-    if (isActive(zone.activeWhen, state.encounterPhases))
-      cellularCurrent(ctx, zone, time, reducedMotion);
+    if (visible(zone, viewport) && isActive(zone.activeWhen, state.encounterPhases))
+      cellularCurrent(ctx, zone, time, reducedMotion, viewport);
   }
 }
 
@@ -168,20 +221,31 @@ function drawDecorationLayer(
   ctx: CanvasRenderingContext2D,
   snapshot: RenderSnapshot,
   time: number,
+  viewport: Rect,
 ): void {
   for (const item of snapshot.level.decorations)
-    decoration(ctx, item, snapshot.reducedMotion ? 0 : time * 0.12);
+    if (visible(item, viewport)) decoration(ctx, item, snapshot.reducedMotion ? 0 : time * 0.12);
 }
 
 function drawTransportLayer(
   ctx: CanvasRenderingContext2D,
   snapshot: RenderSnapshot,
   time: number,
+  viewport: Rect,
 ): void {
   const { level, state, reducedMotion } = snapshot;
   for (const transport of level.transports) {
     if (!isActive(transport.activeWhen, state.encounterPhases)) continue;
     const path = transport.path;
+    const xs = path.map((point) => point.x);
+    const ys = path.map((point) => point.y);
+    const bounds = {
+      x: Math.min(...xs) - transport.radius,
+      y: Math.min(...ys) - transport.radius,
+      width: Math.max(...xs) - Math.min(...xs) + transport.radius * 2,
+      height: Math.max(...ys) - Math.min(...ys) + transport.radius * 2,
+    };
+    if (!visible(bounds, viewport)) continue;
     transportRoute(ctx, transport, path);
     const riding = state.player.attachment;
     const progress =
@@ -215,11 +279,13 @@ function drawObstacleLayer(
   ctx: CanvasRenderingContext2D,
   snapshot: RenderSnapshot,
   time: number,
+  viewport: Rect,
 ): void {
   const { level, state } = snapshot;
   for (const obstacle of level.obstacles) {
     if (!isActive(obstacle.activeWhen, state.encounterPhases)) continue;
     const shape = shapeAt(obstacle, time);
+    if (!visible(shapeBounds(shape), viewport)) continue;
     const fill = obstacle.response.kind === "sticky" ? "#8569a864" : "#294c6888";
     const stroke = obstacle.response.kind === "sticky" ? "#efcbff" : "#c7f2ef";
     if (obstacle.material) organelleSurface(ctx, shape, obstacle.material, level.palette.accent);
@@ -271,13 +337,16 @@ function drawProgressMarkers(
   ctx: CanvasRenderingContext2D,
   snapshot: RenderSnapshot,
   time: number,
+  viewport: Rect,
 ): void {
   const { level, state, reducedMotion } = snapshot;
   for (const hazard of level.hazards) {
+    if (!visible(hazard, viewport)) continue;
     rounded(ctx, hazard, 13, "#d74b6655", "#ffabb7");
     label(ctx, "LYSOSOME ACID", hazard.x + hazard.width / 2, hazard.y - 8, "#ffc1ca", 10);
   }
   for (const checkpoint of level.checkpoints) {
+    if (!visible(checkpoint, viewport)) continue;
     if (!isActive(checkpoint.activeWhen, state.encounterPhases)) continue;
     const active = checkpoint.id === state.checkpoint.id;
     rounded(
@@ -298,6 +367,7 @@ function drawProgressMarkers(
   }
   for (const item of level.collectibles) {
     if (state.collectedIds.has(item.id)) continue;
+    if (!visible({ x: item.x - 8, y: item.y - 8, width: 16, height: 16 }, viewport)) continue;
     const bob = reducedMotion ? 0 : Math.sin(time * 2.2 + item.x) * 4;
     ctx.save();
     ctx.translate(item.x, item.y + bob);
@@ -306,8 +376,29 @@ function drawProgressMarkers(
     ctx.restore();
   }
   for (const encounter of level.encounters) {
+    const checkpoint = encounter.completionCheckpoint;
+    if (checkpoint) {
+      const calm = {
+        x: checkpoint.spawn.x - 18,
+        y: checkpoint.spawn.y - 18,
+        width: 60,
+        height: 60,
+      };
+      if (visible(calm, viewport)) {
+        const complete = (state.encounterPhases.get(encounter.id) ?? 0) >= encounter.steps.length;
+        rounded(
+          ctx,
+          calm,
+          20,
+          complete ? "#82f2bd45" : "#4a91731c",
+          complete ? "#c9ffe1" : "#77a48b66",
+        );
+        label(ctx, complete ? "CALM RETURN" : "CALM WATER", calm.x + 30, calm.y - 9, "#d4ffe6", 10);
+      }
+    }
+    if (level.requiredEncounterIds.includes(encounter.id)) continue;
     const step = encounter.steps[state.encounterPhases.get(encounter.id) ?? 0];
-    if (!step?.region || !step.label) continue;
+    if (step?.kind !== "region" || !step.label || !visible(step.region, viewport)) continue;
     rounded(ctx, step.region, 20, "#f9d98918", "#f9d989aa");
     label(
       ctx,
@@ -318,7 +409,32 @@ function drawProgressMarkers(
       12,
     );
   }
+  const action = currentAction(level, state.encounterPhases, time, state.player.attachment);
+  if (action) {
+    const target = action.region ?? {
+      x: action.center.x - 30,
+      y: action.center.y - 30,
+      width: 60,
+      height: 60,
+    };
+    if (visible(target, viewport)) {
+      rounded(ctx, target, 18, "#ffe49f16", "#ffe49fd9");
+      label(ctx, action.text, action.center.x, target.y - 14, "#ffe8ac", 12);
+    }
+  }
+  if (level.destination) {
+    const destination = level.destination;
+    const bounds = {
+      x: destination.center.x - destination.radius,
+      y: destination.center.y - destination.radius,
+      width: destination.radius * 2,
+      height: destination.radius * 2,
+    };
+    if (visible(bounds, viewport))
+      biologicalDestination(ctx, destination, getEncounterProgress(level, state.encounterPhases));
+  }
   for (const trigger of level.triggers) {
+    if (!visible(trigger, viewport)) continue;
     if (!isActive(trigger.activeWhen, state.encounterPhases)) continue;
     const x = trigger.x + trigger.width / 2;
     const y = trigger.y + trigger.height / 2;
@@ -328,17 +444,61 @@ function drawProgressMarkers(
     } else if (trigger.kind === "hre") {
       motif(ctx, x, y, 13, "#5adccc");
       label(ctx, "RESPONSE ELEMENT", x, trigger.y - 12, "#c4fff1", 11);
-    } else if (trigger.kind === "exit") {
-      label(ctx, "CONTINUE", x, trigger.y - 12, "#c4fff1", 11);
-      ctx.beginPath();
-      ctx.moveTo(x - 10, y - 12);
-      ctx.lineTo(x + 11, y);
-      ctx.lineTo(x - 10, y + 12);
-      ctx.strokeStyle = "#c4fff1";
-      ctx.lineWidth = 3;
-      ctx.stroke();
     }
   }
+}
+
+function drawActionCompass(
+  ctx: CanvasRenderingContext2D,
+  snapshot: RenderSnapshot,
+  camera: Camera,
+): void {
+  const { level, state } = snapshot;
+  const progress = getEncounterProgress(level, state.encounterPhases);
+  const action = currentAction(
+    level,
+    state.encounterPhases,
+    state.levelTime,
+    state.player.attachment,
+  );
+  const target = action?.center ?? (progress.ready ? level.destination?.center : undefined);
+  if (!target) return;
+  const x = (target.x - camera.x) * camera.scale;
+  const y = (target.y - camera.y) * camera.scale;
+  const destination = level.destination;
+  const playerCenter = {
+    x: state.player.x + state.player.width / 2,
+    y: state.player.y + state.player.height / 2,
+  };
+  const nearLocked =
+    destination &&
+    !progress.ready &&
+    Math.hypot(playerCenter.x - destination.center.x, playerCenter.y - destination.center.y) <
+      destination.radius + 150;
+  const onScreen = x >= 60 && x <= VIEW_WIDTH - 60 && y >= 60 && y <= VIEW_HEIGHT - 60;
+  if (onScreen && !nearLocked) return;
+  const cueX = Math.max(42, Math.min(VIEW_WIDTH - 42, x));
+  const cueY = Math.max(72, Math.min(VIEW_HEIGHT - 80, y));
+  const angle = Math.atan2(y - VIEW_HEIGHT / 2, x - VIEW_WIDTH / 2);
+  ctx.save();
+  ctx.translate(cueX, cueY);
+  ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.moveTo(12, 0);
+  ctx.lineTo(-7, -7);
+  ctx.lineTo(-7, 7);
+  ctx.closePath();
+  ctx.fillStyle = progress.ready ? "#c4ffe7" : "#ffe49f";
+  ctx.fill();
+  ctx.restore();
+  const text = nearLocked
+    ? `Return to: ${action?.text ?? progress.current?.objective ?? "unfinished encounter"}`
+    : (action?.text ?? destination?.label ?? "Destination");
+  // Keep long labels within the logical canvas, including at side-edge compass positions.
+  ctx.font = "600 12px system-ui, sans-serif";
+  const halfWidth = Math.min(440, ctx.measureText(text).width / 2 + 12);
+  const labelX = Math.max(halfWidth + 10, Math.min(VIEW_WIDTH - halfWidth - 10, cueX));
+  label(ctx, text, labelX, cueY + 35, nearLocked ? "#ffe49f" : "#effff8", 12);
 }
 
 function drawPlayer(

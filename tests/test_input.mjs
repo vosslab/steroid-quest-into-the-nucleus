@@ -55,6 +55,8 @@ test("input accepts only arrows and one pulse per physical Space press", () => {
     assert.deepEqual(input.sample(), {
       left: false,
       right: false,
+      up: false,
+      down: false,
       pulseHeld: false,
       pulsePressed: false,
     });
@@ -69,10 +71,25 @@ test("input accepts only arrows and one pulse per physical Space press", () => {
     assert.deepEqual(input.sample(), {
       left: false,
       right: true,
+      up: false,
+      down: false,
       pulseHeld: true,
       pulsePressed: true,
     });
     assert.equal(input.sample().pulsePressed, false);
+
+    const up = keyboard("ArrowUp");
+    const down = keyboard("ArrowDown");
+    windowTarget.emit("keydown", up);
+    windowTarget.emit("keydown", keyboard("ArrowUp", true));
+    windowTarget.emit("keydown", down);
+    assert.equal(up.prevented, true);
+    assert.equal(down.prevented, true);
+    assert.equal(input.sample().up, true);
+    assert.equal(input.sample().down, true);
+    assert.equal(input.sample().pulsePressed, false);
+    windowTarget.emit("keyup", keyboard("ArrowDown"));
+    assert.equal(input.sample().down, false);
 
     windowTarget.emit("keyup", keyboard("Space"));
     windowTarget.emit("keydown", keyboard("Space"));
@@ -80,6 +97,22 @@ test("input accepts only arrows and one pulse per physical Space press", () => {
     windowTarget.emit("keydown", keyboard("Escape"));
     windowTarget.emit("keydown", keyboard("Escape", true));
     assert.deepEqual(commands, ["pause"]);
+    documentTarget.activeElement = {};
+    const unfocused = keyboard("ArrowDown");
+    windowTarget.emit("keydown", unfocused);
+    assert.equal(unfocused.prevented, false);
+    canvas.emit("blur");
+    assert.equal(input.sample().up, false);
+    assert.equal(input.sample().pulseHeld, false);
+    assert.equal(commands.at(-1), "focus-loss");
+    documentTarget.activeElement = canvas;
+    windowTarget.emit("keydown", keyboard("ArrowDown"));
+    input.clear();
+    assert.equal(input.sample().down, false);
+    windowTarget.emit("keydown", keyboard("ArrowUp"));
+    documentTarget.hidden = true;
+    documentTarget.emit("visibilitychange");
+    assert.equal(input.sample().up, false);
     input.dispose();
   } finally {
     globalThis.window = originalWindow;

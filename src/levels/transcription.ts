@@ -14,6 +14,8 @@ export const TRANSCRIPTION_LEVEL: LevelDefinition = {
   flowZones: [],
   transports: [],
   encounters: [],
+  requiredEncounterIds: [],
+  destination: undefined,
   hazards: [],
   checkpoints: [
     {

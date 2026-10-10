@@ -1,22 +1,21 @@
 import { circleRectOverlap, circleShapeContact, pathPoint, shapeAt } from "../physics";
+import { validateChambers } from "./chamber_validation";
 import { PLAYER_RADIUS } from "../constants";
-import type { FlowZone, PhaseCondition, Point, Rect, Transport } from "../types/level";
+import type {
+  FlowZone,
+  PhaseCondition,
+  Point,
+  Rect,
+  Shape,
+  Transport,
+  EncounterStep,
+} from "../types/level";
 import type { ChamberSpec, CompiledChambers } from "../types/sections";
 
 const TRANSPORT_SAMPLES = 200;
 const MOVING_OBSTACLE_SAMPLES = 24;
 
 const finite = (value: number): boolean => Number.isFinite(value);
-const inBounds = (point: Point, bounds: Rect): boolean =>
-  point.x >= bounds.x &&
-  point.x <= bounds.x + bounds.width &&
-  point.y >= bounds.y &&
-  point.y <= bounds.y + bounds.height;
-const rectWithin = (rect: Rect, bounds: Rect): boolean =>
-  rect.x >= bounds.x &&
-  rect.y >= bounds.y &&
-  rect.x + rect.width <= bounds.x + bounds.width &&
-  rect.y + rect.height <= bounds.y + bounds.height;
 
 /** Different encounters can advance independently, so only shared IDs can prove disjoint phases. */
 export function conditionsOverlap(
@@ -58,9 +57,15 @@ function obstacleBlocksPoint(
   const period = obstacle.motion.period;
   if (!finite(period) || period <= 0)
     return Boolean(circleShapeContact(center, PLAYER_RADIUS, obstacle.shape));
+  // Inflate each sample by the maximum movement to the nearest sampled time.
+  // This covers the continuous orbit, including contacts between sample instants.
+  const clearance =
+    PLAYER_RADIUS +
+    (Math.PI * Math.max(obstacle.motion.radiusX, obstacle.motion.radiusY)) /
+      MOVING_OBSTACLE_SAMPLES;
   for (let index = 0; index <= MOVING_OBSTACLE_SAMPLES; index += 1) {
     const time = (period * index) / MOVING_OBSTACLE_SAMPLES;
-    if (circleShapeContact(center, PLAYER_RADIUS, shapeAt(obstacle, time))) return true;
+    if (circleShapeContact(center, clearance, shapeAt(obstacle, time))) return true;
   }
   return false;
 }
@@ -126,12 +131,13 @@ function validateCompiledSafety(width: number, height: number, compiled: Compile
   for (const checkpoint of compiled.checkpoints) {
     validateSpawn(checkpoint.id, checkpoint.spawn, checkpoint.activeWhen, width, height, compiled);
   }
-  for (const trigger of compiled.triggers) {
-    if (trigger.kind === "receptor" && trigger.checkpoint) {
+  for (const encounter of compiled.encounters) {
+    const checkpoint = encounter.completionCheckpoint;
+    if (checkpoint) {
       validateSpawn(
-        `${trigger.id} receptor checkpoint`,
-        trigger.checkpoint.spawn,
-        trigger.activeWhen,
+        checkpoint.id,
+        checkpoint.spawn,
+        { encounterId: encounter.id, min: encounter.steps.length },
         width,
         height,
         compiled,
@@ -142,58 +148,58 @@ function validateCompiledSafety(width: number, height: number, compiled: Compile
     validateTransport(transport, width, height, compiled);
 }
 
-function validateChamber(chamber: ChamberSpec, seen: Set<string>): void {
-  if (!/^[a-z][a-z0-9_]*$/.test(chamber.id) || seen.has(chamber.id)) {
-    throw new Error(`Invalid or repeated chamber ID: ${chamber.id}`);
-  }
-  seen.add(chamber.id);
-  const { bounds } = chamber;
-  if (
-    ![bounds.x, bounds.y, bounds.width, bounds.height].every(finite) ||
-    bounds.width < 120 ||
-    bounds.height < 120
-  ) {
-    throw new Error(`${chamber.id}: chamber bounds must be finite and usable.`);
-  }
-  if (!inBounds(chamber.entrance, bounds) || !inBounds(chamber.exit, bounds)) {
-    throw new Error(`${chamber.id}: entrance and exit must be inside the chamber.`);
-  }
-  if (!rectWithin(chamber.recovery, bounds) || chamber.recovery.acceleration.y <= 0) {
-    throw new Error(`${chamber.id}: recovery must be an in-bounds downward field.`);
-  }
-  if (chamber.sequence.length === 0)
-    throw new Error(`${chamber.id}: interaction sequence is required.`);
-  if (chamber.recovery.y > bounds.y + 2 || chamber.recovery.height < bounds.height - 4) {
-    throw new Error(`${chamber.id}: recovery must reach every upper pocket.`);
-  }
-  for (const field of chamber.fields ?? []) {
-    if (!rectWithin(field, bounds)) throw new Error(`${chamber.id}: field leaves its chamber.`);
-  }
-  if (chamber.checkpoint) {
-    if (
-      !rectWithin(chamber.checkpoint, bounds) ||
-      !inBounds(chamber.checkpoint.spawn, chamber.checkpoint)
-    ) {
-      throw new Error(`${chamber.id}: checkpoint and spawn must be inside the chamber.`);
-    }
-  }
-  for (const transport of chamber.transports ?? []) {
-    if (transport.path.length < 2 || transport.duration <= 0 || transport.wait < 0) {
-      throw new Error(`${chamber.id}: transport needs a timed path.`);
-    }
-    if (!transport.path.every((point) => inBounds(point, bounds))) {
-      throw new Error(`${chamber.id}: transport path leaves its chamber.`);
-    }
+function translatePoint(point: Point, placement: Point): Point {
+  return { x: point.x + placement.x, y: point.y + placement.y };
+}
+
+function translateRect<T extends Rect>(rect: T, placement: Point): T {
+  return { ...rect, ...translatePoint(rect, placement) };
+}
+
+function translateShape(shape: Shape, placement: Point): Shape {
+  switch (shape.kind) {
+    case "circle":
+      return { ...shape, center: translatePoint(shape.center, placement) };
+    case "capsule":
+      return {
+        ...shape,
+        start: translatePoint(shape.start, placement),
+        end: translatePoint(shape.end, placement),
+      };
+    case "roundedRect":
+      return translateRect(shape, placement);
   }
 }
 
-/** Compile declarative cellular chambers into the shared, data-only simulation primitives. */
+function translateCondition(
+  condition: PhaseCondition | undefined,
+  stage: string,
+): PhaseCondition | undefined {
+  return condition && { ...condition, encounterId: `${stage}-${condition.encounterId}` };
+}
+
+function translateStep(step: EncounterStep, placement: Point, prefix: string): EncounterStep {
+  switch (step.kind) {
+    case "region":
+      return { ...step, region: translateRect(step.region, placement) };
+    case "contact":
+      return { ...step, contactId: `${prefix}-${step.contactId}` };
+    case "transport_capture":
+    case "transport_delivery":
+      return { ...step, transportId: `${prefix}-${step.transportId}` };
+    case "milestone":
+      return { ...step };
+  }
+}
+
+/** Translate ordinary chamber-local recipes, namespacing IDs exactly once. */
 export function compileChambers(
   stage: string,
   width: number,
   height: number,
   chambers: readonly ChamberSpec[],
 ): CompiledChambers {
+  validateChambers(stage, width, height, chambers);
   const compiled: CompiledChambers = {
     width,
     height,
@@ -201,56 +207,86 @@ export function compileChambers(
     flowZones: [],
     transports: [],
     encounters: [],
+    requiredEncounterIds: [],
     hazards: [],
     checkpoints: [],
     collectibles: [],
     decorations: [],
     triggers: [],
   };
-  const ids = new Set<string>();
-  for (const [order, chamber] of chambers.entries()) {
-    validateChamber(chamber, ids);
+  for (const chamber of chambers) {
     const prefix = `${stage}-${chamber.id}`;
+    const placement = chamber.placement;
     compiled.obstacles.push(
-      ...(chamber.obstacles ?? []).map((item, index) => ({
+      ...(chamber.obstacles ?? []).map((item) => ({
         ...item,
-        id: `${prefix}-obstacle-${index}`,
+        id: `${prefix}-${item.id}`,
+        shape: translateShape(item.shape, placement),
+        activeWhen: translateCondition(item.activeWhen, stage),
       })),
     );
+    const fields = [{ ...chamber.recovery, id: "return" }, ...(chamber.fields ?? [])];
     compiled.flowZones.push(
-      { ...chamber.recovery, id: `${prefix}-return` },
-      ...(chamber.fields ?? []).map((item, index) => ({ ...item, id: `${prefix}-field-${index}` })),
+      ...fields.map((item) => ({
+        ...translateRect(item, placement),
+        id: `${prefix}-${item.id}`,
+        vortex: item.vortex && {
+          ...item.vortex,
+          center: translatePoint(item.vortex.center, placement),
+        },
+        activeWhen: translateCondition(item.activeWhen, stage),
+      })),
     );
     compiled.transports.push(
-      ...(chamber.transports ?? []).map((item, index) => ({
+      ...(chamber.transports ?? []).map((item) => ({
         ...item,
-        id: `${prefix}-transport-${index}`,
+        id: `${prefix}-${item.id}`,
+        path: item.path.map((point) => translatePoint(point, placement)),
+        activeWhen: translateCondition(item.activeWhen, stage),
       })),
     );
-    compiled.encounters.push({ id: prefix, steps: chamber.sequence });
+    if (chamber.required) compiled.requiredEncounterIds.push(prefix);
+    compiled.encounters.push({
+      id: prefix,
+      objective: chamber.objective,
+      steps: chamber.sequence.map((step) => translateStep(step, placement, prefix)),
+      completionCheckpoint: chamber.required
+        ? {
+            id: `${prefix}-complete`,
+            order: compiled.requiredEncounterIds.length,
+            spawn: translatePoint(chamber.completionCheckpoint, placement),
+          }
+        : undefined,
+    });
     if (chamber.checkpoint)
       compiled.checkpoints.push({
-        ...chamber.checkpoint,
+        ...translateRect(chamber.checkpoint, placement),
         id: `${prefix}-checkpoint`,
-        order: order + 1,
+        order: 0,
+        spawn: translatePoint(chamber.checkpoint.spawn, placement),
+        activeWhen: translateCondition(chamber.checkpoint.activeWhen, stage),
       });
     compiled.hazards.push(
-      ...(chamber.hazards ?? []).map((item, index) => ({
-        ...item,
-        id: `${prefix}-hazard-${index}`,
+      ...(chamber.hazards ?? []).map((item) => ({
+        ...translateRect(item, placement),
+        id: `${prefix}-${item.id}`,
       })),
     );
     compiled.collectibles.push(
-      ...(chamber.collectibles ?? []).map((item, index) => ({
+      ...(chamber.collectibles ?? []).map((item) => ({
         ...item,
-        id: `${prefix}-collectible-${index}`,
+        ...translatePoint(item, placement),
+        id: `${prefix}-${item.id}`,
       })),
     );
-    compiled.decorations.push(...(chamber.decorations ?? []));
+    compiled.decorations.push(
+      ...(chamber.decorations ?? []).map((item) => translateRect(item, placement)),
+    );
     compiled.triggers.push(
-      ...(chamber.triggers ?? []).map((item, index) => ({
-        ...item,
-        id: `${prefix}-trigger-${index}`,
+      ...(chamber.triggers ?? []).map((item) => ({
+        ...translateRect(item, placement),
+        id: `${prefix}-${item.id}`,
+        activeWhen: translateCondition(item.activeWhen, stage),
       })),
     );
   }

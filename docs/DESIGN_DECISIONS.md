@@ -143,8 +143,8 @@ than kill. Only marked destructive regions cause death.
 transfers into shared obstacles, fields, transports, and encounter steps. Explicit phases change
 routes after contact or entry; levels do not own runtime scripts.
 
-**Why.** Memorable interactions can recur in stranger combinations without lengthening the
-campaign with predictable travel.
+**Why.** Memorable interactions can recur in stranger combinations, adding active campaign
+content without predictable travel.
 
 **Consequence.** Recipes describe entrance, exit, sequence, recovery, and optional branch. Temporary
 attachment has tap, held-thrust, and automatic release. Completed route changes survive retry,
@@ -169,15 +169,119 @@ Calm regions allow inspection and braking without requiring floor support.
 **Owner.** [src/types/simulation.ts](../src/types/simulation.ts) and
 [src/simulation.ts](../src/simulation.ts).
 
+### Gentle optional vertical control
+
+**Decision.** Preserve Left/Right/Space as primary movement and add continuous optional Up/Down
+fine control at 80 units/s^2 during free motion. Opposing arrows cancel.
+
+**Why.** Gentle adjustment supports positioning and recovery within the existing fluid model.
+
+**Consequence.** Fine control adds no tap impulse, attachment release, or recruitment action.
+Every required route remains completable with the three primary keys. Keep keyboard focus,
+repeat suppression, and blur/pause cleanup in the existing input boundary.
+
+**Owner.** [src/input.ts](../src/input.ts), [src/simulation.ts](../src/simulation.ts), and
+[src/constants.ts](../src/constants.ts).
+
+### Movable named chamber data
+
+**Decision.** Author the four existing chamber families in local coordinates with an explicit
+placement origin. Compile every position and reference together. Use stable local primitive and
+step names; derive named-step phase thresholds with `phaseBefore` and `phaseAfter`.
+
+**Why.** Moving chambers and inserting authored objects should preserve geometry and reference
+meaning without scattered world-coordinate or array-index edits.
+
+**Consequence.** Namespace primitive IDs once by stage and chamber; retain step IDs within their
+encounter. Translate ordinary typed TypeScript data, including paths, vortex centers, regions,
+scenery, triggers, and recovery spawns. Rotation, scaling, automatic layout, and a new language
+remain outside the authoring contract.
+
+**Owner.** [src/types/sections.ts](../src/types/sections.ts),
+[src/levels/section_specs.ts](../src/levels/section_specs.ts), and
+[src/levels/encounter_phases.ts](../src/levels/encounter_phases.ts).
+
+### Required encounter completion authority
+
+**Decision.** Derive required progress from encounter phases and the level's ordered required IDs.
+Advance only the current required encounter; allow optional encounters to remain independent.
+
+**Why.** Required activity must govern progression while avoiding a competing completion store.
+
+**Consequence.** Named steps observe region entry, contact, capture, natural delivery, or biological
+milestones. Premature release never satisfies delivery. A required milestone gates receptor/HRE
+binding to its current step. Completion immediately saves the authored calm spawn and opens
+phase-controlled onward routes. Save order follows encounter order; collectibles and exploration
+markers cannot bypass completion or replace its save. Death/retry retain completed phases,
+milestones, fragments, and opened routes; Replay clears them.
+
+**Owner.** [src/types/level.ts](../src/types/level.ts),
+[src/progression.ts](../src/progression.ts), and [src/simulation.ts](../src/simulation.ts).
+
+### Biological destination transitions
+
+**Decision.** Gate recognizable destination capture by required completion and biological
+prerequisites, then use a one-second simulation-timed transition to the next campaign stage.
+
+**Why.** Visible destinations make the journey's biological continuity and unfinished work readable.
+
+**Consequence.** Early contact gently redirects the player toward the current action. The existing
+canvas and loop render readonly transition state and a nonsimulated next-stage preview. Source-stage
+HUD authority continues until one stage commitment. Pause/focus loss freeze progress; retry cancels
+capture; runtime clears buffered input at the boundary. Reduced motion uses a crossfade without
+scaling. Preserve the bound complex and DNA docking continuity.
+
+**Owner.** [src/types/simulation.ts](../src/types/simulation.ts),
+[src/simulation.ts](../src/simulation.ts), [src/runtime.ts](../src/runtime.ts), and
+[src/renderer.ts](../src/renderer.ts).
+
+### Destination zoom framing
+
+**Decision.** Keep normal and transition camera framing in a pure shared helper. During destination
+zoom, interpolate the destination's screen anchor toward center and derive the offset at the current
+zoom scale.
+
+**Why.** Captured steroid and destination must remain visible near world edges throughout capture.
+
+**Consequence.** Preserve normal tracking, velocity look-ahead, and world clamps. Reduced motion
+retains normal framing with a crossfade only. Invariant tests protect anchor visibility and reduced
+motion; actual-controls captures establish rendered acceptance separately.
+
+**Owner.** [src/camera.ts](../src/camera.ts) and [src/renderer.ts](../src/renderer.ts).
+
+### Shared attachment-aware action cues
+
+**Decision.** Derive one current-action cue for the HUD, world marker, and compass from required
+progress and actual attachment state.
+
+**Why.** A pending delivery needs a reachable reboarding target after early escape or retry.
+
+**Consequence.** Matching transport attachment retains delivery wording and endpoint guidance.
+Detached players see a reboarding action at the channel mouth or moving cargo's current capture
+position. Initial motor/vesicle capture tracks that same current position. Presentation never
+advances encounter phases.
+
+**Owner.** [src/journey_presentation.ts](../src/journey_presentation.ts),
+[src/app.tsx](../src/app.tsx), and [src/renderer.ts](../src/renderer.ts).
+
 ### Pacing acceptance through play
 
-**Decision.** Target the first environmental interaction within roughly three seconds and changes
-of action every five to eight seconds of ordinary traversal. These are playtest targets.
+**Decision.** Target an 8-12 minute standard-route campaign through varied required interactions,
+with the first environmental interaction within roughly three seconds and changes of action
+every five to eight seconds of ordinary traversal. These are measured acceptance targets.
 
 **Why.** The governing principle is continuing curiosity about the next strange cellular event.
 
-**Consequence.** Capture signature encounters, mistakes, recoveries, and traversal times through
-the built artifact. Automated completion proves a route; human enjoyment needs human play.
+**Consequence.** Preserve movement speed and the short transcription finale. Measure two complete
+actual-controls routes through the built artifact, using a reference controller and an independent
+agent. Count active campaign time, including transport, ordinary recovery, transitions, and
+transcription; exclude menus, pauses, artificial waiting, and intentional repeated failure. Review
+recordings and per-encounter timing before claiming acceptance. Optimized replays may be faster;
+no runtime minimum-duration timer exists. Agent acceptance requires no human response. Human
+enjoyment remains a separate unmeasured question.
+Stage budgets are estimates; report the actual short transcription duration rather than changing
+its actions or RNA payoff to fit the original allocation. The complete standard routes own the
+480-720 active-second gate.
 
 **Owner.** [LEVEL_DESIGN.md](LEVEL_DESIGN.md) and
-[fluid_walkthrough.md](active_plans/reports/fluid_walkthrough.md).
+[longer_cellular_journeys.md](archive/longer_cellular_journeys.md).

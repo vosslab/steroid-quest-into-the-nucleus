@@ -40,8 +40,32 @@ export type Transport = {
   activeWhen?: PhaseCondition;
   label?: string;
 };
-export type EncounterStep = { region?: Rect; contactId?: string; caption: string; label?: string };
-export type Encounter = { id: string; steps: readonly EncounterStep[] };
+export type BiologicalMilestone = "receptor_bound" | "hre_bound";
+/** IDs are stable local names within an encounter; each step has one completion source.
+ * Transport delivery excludes early release. */
+export type EncounterStep = { id: string; caption: string; label?: string } & (
+  | { kind: "region"; region: Rect }
+  | { kind: "contact"; contactId: string }
+  | { kind: "transport_capture"; transportId: string }
+  | { kind: "transport_delivery"; transportId: string }
+  | { kind: "milestone"; milestone: BiologicalMilestone }
+);
+/** Order comes from the level's required encounter sequence, independent of position. */
+export type EncounterCheckpoint = { id: string; order: number; spawn: Point };
+export type Encounter = {
+  id: string;
+  objective: string;
+  steps: readonly EncounterStep[];
+  completionCheckpoint?: EncounterCheckpoint;
+};
+/** The next stage is inferred from campaign order, rather than stored in the destination. */
+export type DestinationDefinition = {
+  id: string;
+  center: Point;
+  radius: number;
+  label: string;
+  motif: "vesicle" | "nucleus" | "receptor" | "chromatin" | "gene";
+};
 export type Hazard = Rect & { id: string; kind: "acid" };
 export type Collectible = Point & { id: string };
 /** Order is route progress, never an x-coordinate. Spawn is a calm player top-left. */
@@ -53,11 +77,9 @@ export type CheckpointDefinition = Rect & {
 };
 export type Trigger = Rect & {
   id: string;
-  kind: "exit" | "receptor" | "hre" | "transcription" | "caption";
+  kind: "receptor" | "hre" | "transcription" | "caption";
   caption?: string;
   activeWhen?: PhaseCondition;
-  /** Biological binding can save an explicitly authored calm spawn. */
-  checkpoint?: { order: number; spawn: Point };
 };
 /** Decorative geometry never determines collision. */
 export type Decoration = Rect & {
@@ -77,6 +99,10 @@ export type LevelDefinition = {
   flowZones: readonly FlowZone[];
   transports: readonly Transport[];
   encounters: readonly Encounter[];
+  /** Completion is derived from encounterPhases; this array supplies ordering only. */
+  requiredEncounterIds: readonly string[];
+  /** Transcription ends the campaign and has no onward destination. */
+  destination: DestinationDefinition | undefined;
   hazards: readonly Hazard[];
   checkpoints: readonly CheckpointDefinition[];
   collectibles: readonly Collectible[];

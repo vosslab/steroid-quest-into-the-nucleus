@@ -3,6 +3,7 @@ import {
   COLLISION_ITERATIONS,
   COLLISION_SUBSTEP_DISTANCE,
   FLUID_DRAG,
+  GENTLE_THRUST,
   HELD_THRUST,
   HORIZONTAL_ACCELERATION,
   MAX_SPEED,
@@ -11,6 +12,7 @@ import {
   TRANSITION_TIME,
 } from "./constants";
 import { createGameState, createPlayer } from "./game_state";
+import { getEncounterProgress } from "./progression";
 import {
   circleRectOverlap,
   circleShapeContact,
@@ -23,10 +25,24 @@ import {
   transportVelocity,
 } from "./physics";
 import type { InputFrame } from "./types/input";
-import type { LevelDefinition, Obstacle, Point } from "./types/level";
+import type {
+  BiologicalMilestone,
+  Encounter,
+  EncounterStep,
+  LevelDefinition,
+  Obstacle,
+  Point,
+} from "./types/level";
 import type { EventHandler, GamePhase, Simulation } from "./types/simulation";
 
-const idleInput: InputFrame = { left: false, right: false, pulsePressed: false, pulseHeld: false };
+const idleInput: InputFrame = {
+  left: false,
+  right: false,
+  up: false,
+  down: false,
+  pulsePressed: false,
+  pulseHeld: false,
+};
 const MAX_COLLISION_SUBSTEPS = 32;
 const MAX_STEP_DURATION = 0.05;
 
@@ -129,12 +145,31 @@ export function createSimulation(
   validateCollisionTraversal(levels);
   const state = createGameState(levels);
   let suspendedPhase: GamePhase = "playing";
+  let destinationReady = false;
+  let destinationContact = false;
+  let touchingCheckpoint: string | undefined;
   const currentLevel = (): LevelDefinition => {
     const level = levels[state.levelIndex];
     if (!level) throw new Error("Campaign stage index is out of range.");
     return level;
   };
   const notify = (): void => onEvent({ type: "state" });
+  const biologicalDestinationReady = (): boolean => {
+    const next = levels[state.levelIndex + 1];
+    return (
+      Boolean(next) &&
+      (next?.id !== "dna" || state.receptorBound) &&
+      (next?.id !== "transcription" || (state.receptorBound && state.hreBound))
+    );
+  };
+  const announceDestinationReady = (): void => {
+    const level = currentLevel();
+    const ready =
+      getEncounterProgress(level, state.encounterPhases).ready && biologicalDestinationReady();
+    if (ready && !destinationReady && level.destination)
+      onEvent({ type: "destination-ready", destinationId: level.destination.id });
+    destinationReady = ready;
+  };
   const announce = (): void => {
     const level = currentLevel();
     onEvent({
@@ -144,6 +179,7 @@ export function createSimulation(
       objective: level.objective,
     });
     onEvent({ type: "caption", text: level.caption });
+    announceDestinationReady();
     notify();
   };
   const placeSafely = (): void => {
@@ -222,6 +258,9 @@ export function createSimulation(
     state.player = createPlayer(state.checkpoint.spawn);
     state.phase = "playing";
     state.phaseRemaining = 0;
+    state.transition = undefined;
+    destinationContact = false;
+    touchingCheckpoint = undefined;
     onEvent({ type: "reset" });
     notify();
   };
@@ -247,20 +286,60 @@ export function createSimulation(
       spawn: { ...level.spawn },
     };
     state.phase = "playing";
+    state.phaseRemaining = 0;
+    state.transition = undefined;
+    destinationReady = false;
+    destinationContact = false;
+    touchingCheckpoint = undefined;
     announce();
   };
-  const advanceEncounter = (id: string, caption: string): void => {
-    const phase = (state.encounterPhases.get(id) ?? 0) + 1;
-    state.encounterPhases.set(id, phase);
-    onEvent({ type: "encounter", id, phase });
+  const advanceEncounter = (encounter: Encounter, caption: string): void => {
+    const phase = (state.encounterPhases.get(encounter.id) ?? 0) + 1;
+    state.encounterPhases.set(encounter.id, phase);
+    onEvent({ type: "encounter", id: encounter.id, phase });
+    const checkpoint = encounter.completionCheckpoint;
+    if (
+      phase === encounter.steps.length &&
+      currentLevel().requiredEncounterIds.includes(encounter.id) &&
+      checkpoint &&
+      checkpoint.order > state.checkpoint.order
+    ) {
+      state.checkpoint = {
+        ...checkpoint,
+        levelIndex: state.levelIndex,
+        spawn: { ...checkpoint.spawn },
+      };
+      onEvent({ type: "checkpoint", id: checkpoint.id });
+    }
     if (caption) onEvent({ type: "caption", text: caption });
+    announceDestinationReady();
+    notify();
   };
-  const contactEncounter = (contactId: string): void => {
-    for (const encounter of currentLevel().encounters) {
+  const observeEncounterStep = (matches: (step: EncounterStep) => boolean): void => {
+    const level = currentLevel();
+    // ASVS 2.3.1: only the current required encounter can process an observed action.
+    const current = getEncounterProgress(level, state.encounterPhases).current;
+    for (const encounter of level.encounters) {
+      if (level.requiredEncounterIds.includes(encounter.id) && encounter !== current) continue;
       const phase = state.encounterPhases.get(encounter.id) ?? 0;
       const step = encounter.steps[phase];
-      if (step?.contactId === contactId) advanceEncounter(encounter.id, step.caption);
+      if (step && matches(step)) advanceEncounter(encounter, step.caption);
     }
+  };
+  const contactEncounter = (contactId: string): void => {
+    observeEncounterStep((step) => step.kind === "contact" && step.contactId === contactId);
+  };
+  const canBind = (milestone: BiologicalMilestone): boolean => {
+    const level = currentLevel();
+    const declared = level.encounters.some(
+      (encounter) =>
+        level.requiredEncounterIds.includes(encounter.id) &&
+        encounter.steps.some((step) => step.kind === "milestone" && step.milestone === milestone),
+    );
+    if (!declared) return true;
+    const current = getEncounterProgress(level, state.encounterPhases).current;
+    const step = current?.steps[state.encounterPhases.get(current.id) ?? 0];
+    return step?.kind === "milestone" && step.milestone === milestone;
   };
   const resolveObstacle = (obstacle: Obstacle, time: number, dt: number): boolean => {
     const player = state.player;
@@ -390,6 +469,9 @@ export function createSimulation(
         previousPoint = point;
       }
       if (attachment.progress >= 1) {
+        observeEncounterStep(
+          (step) => step.kind === "transport_delivery" && step.transportId === attachment.id,
+        );
         release(attachment.id, { velocity: transportReleaseVelocity(transport, 1), safe: false });
         // The authored final point is the release position. The next frame owns its drift.
         return true;
@@ -471,34 +553,39 @@ export function createSimulation(
       player.vy = velocity.y;
       boundedVelocity(player);
       onEvent({ type: "capture", id: transport.id });
-      contactEncounter(transport.id);
+      observeEncounterStep(
+        (step) => step.kind === "transport_capture" && step.transportId === transport.id,
+      );
       break;
     }
   };
   const updateProgress = (level: LevelDefinition): void => {
     const player = state.player;
     const center = playerCenter(player);
-    for (const encounter of level.encounters) {
-      const phase = state.encounterPhases.get(encounter.id) ?? 0;
-      const step = encounter.steps[phase];
-      if (step?.region && circleRectOverlap(center, player.radius, step.region))
-        advanceEncounter(encounter.id, step.caption);
-    }
+    observeEncounterStep(
+      (step) => step.kind === "region" && circleRectOverlap(center, player.radius, step.region),
+    );
+    let marker: string | undefined;
     for (const checkpoint of level.checkpoints) {
       if (
         !isActive(checkpoint.activeWhen, state.encounterPhases) ||
-        checkpoint.order <= state.checkpoint.order
+        state.checkpoint.order > 0 ||
+        getEncounterProgress(level, state.encounterPhases).completed > 0
       )
         continue;
       if (!circleRectOverlap(center, player.radius, checkpoint)) continue;
+      marker = checkpoint.id;
+      if (touchingCheckpoint === checkpoint.id) break;
       state.checkpoint = {
         id: checkpoint.id,
         levelIndex: state.levelIndex,
-        order: checkpoint.order,
+        order: 0,
         spawn: { ...checkpoint.spawn },
       };
       onEvent({ type: "checkpoint", id: checkpoint.id });
+      break;
     }
+    touchingCheckpoint = marker;
     for (const item of level.collectibles) {
       if (
         !state.collectedIds.has(item.id) &&
@@ -514,26 +601,13 @@ export function createSimulation(
         !circleRectOverlap(center, player.radius, trigger)
       )
         continue;
-      if (
-        state.activatedTriggerIds.has(trigger.id) &&
-        trigger.kind !== "transcription" &&
-        trigger.kind !== "exit"
-      )
-        continue;
+      if (state.activatedTriggerIds.has(trigger.id) && trigger.kind !== "transcription") continue;
       if (trigger.kind === "receptor") {
+        if (!state.receptorBound && !canBind("receptor_bound")) continue;
         state.receptorBound = true;
-        if (trigger.checkpoint && trigger.checkpoint.order > state.checkpoint.order) {
-          state.checkpoint = {
-            id: trigger.id,
-            levelIndex: state.levelIndex,
-            order: trigger.checkpoint.order,
-            spawn: { ...trigger.checkpoint.spawn },
-          };
-          onEvent({ type: "checkpoint", id: trigger.id });
-        }
         onEvent({ type: "bound" });
       } else if (trigger.kind === "hre") {
-        if (!state.receptorBound) continue;
+        if (!state.receptorBound || (!state.hreBound && !canBind("hre_bound"))) continue;
         state.hreBound = true;
         onEvent({ type: "hre" });
       } else if (trigger.kind === "transcription") {
@@ -542,22 +616,56 @@ export function createSimulation(
         state.recruitmentClock = 0;
         player.vx = 0;
         player.vy = 0;
-      } else if (trigger.kind === "exit") {
-        const next = levels[state.levelIndex + 1];
-        if (
-          !next ||
-          (next.id === "dna" && !state.receptorBound) ||
-          (next.id === "transcription" && !state.hreBound)
-        )
-          continue;
-        state.phase = "transition";
-        state.phaseRemaining = TRANSITION_TIME;
       }
       state.activatedTriggerIds.add(trigger.id);
       if (trigger.caption) onEvent({ type: "caption", text: trigger.caption });
       notify();
       if (state.phase !== "playing") break;
     }
+    observeEncounterStep(
+      (step) =>
+        step.kind === "milestone" &&
+        (step.milestone === "receptor_bound" ? state.receptorBound : state.hreBound),
+    );
+    announceDestinationReady();
+    if (state.phase !== "playing" || !level.destination) return;
+    const destination = level.destination;
+    const distance = magnitude(center.x - destination.center.x, center.y - destination.center.y);
+    if (distance > destination.radius + player.radius) {
+      destinationContact = false;
+      return;
+    }
+    const progress = getEncounterProgress(level, state.encounterPhases);
+    if (!progress.ready || !biologicalDestinationReady()) {
+      const dx = center.x - destination.center.x;
+      const dy = center.y - destination.center.y;
+      const length = Math.max(0.001, distance);
+      const normal = distance < 0.001 ? { x: -1, y: 0 } : { x: dx / length, y: dy / length };
+      setCenter(player, {
+        x: destination.center.x + normal.x * (destination.radius + player.radius + 2),
+        y: destination.center.y + normal.y * (destination.radius + player.radius + 2),
+      });
+      player.vx = normal.x * 80;
+      player.vy = normal.y * 80;
+      if (!destinationContact)
+        onEvent({
+          type: "caption",
+          text:
+            progress.current?.objective ??
+            "Complete receptor and DNA recognition before continuing.",
+        });
+      destinationContact = true;
+      return;
+    }
+    setCenter(player, destination.center);
+    player.vx = 0;
+    player.vy = 0;
+    player.attachment = undefined;
+    state.phase = "transition";
+    state.phaseRemaining = TRANSITION_TIME;
+    state.transition = { destinationId: destination.id, elapsed: 0, duration: TRANSITION_TIME };
+    onEvent({ type: "transition-start", destinationId: destination.id });
+    notify();
   };
   const move = (input: InputFrame, dt: number): void => {
     const level = currentLevel();
@@ -570,6 +678,7 @@ export function createSimulation(
     }
     const horizontal = Number(input.right) - Number(input.left);
     player.vx += horizontal * HORIZONTAL_ACCELERATION * dt;
+    player.vy += (Number(input.down) - Number(input.up)) * GENTLE_THRUST * dt;
     if (input.pulsePressed) {
       player.vy -= PULSE_IMPULSE;
       onEvent({ type: "pulse" });
@@ -619,6 +728,7 @@ export function createSimulation(
       }
     },
     step(input: InputFrame = idleInput, dt: number): void {
+      // ASVS 2.2.1: bounded finite steps keep the simulation within its collision budget.
       if (
         !Number.isFinite(dt) ||
         dt <= 0 ||
@@ -629,12 +739,16 @@ export function createSimulation(
       )
         return;
       state.elapsed += dt;
-      if (state.phase === "respawning" || state.phase === "transition") {
+      if (state.phase === "transition") {
+        const transition = state.transition;
+        if (!transition) throw new Error("A transition requires its destination capture state.");
+        const elapsed = Math.min(transition.duration, transition.elapsed + dt);
+        state.transition = { ...transition, elapsed };
+        state.phaseRemaining = transition.duration - elapsed;
+        if (elapsed >= transition.duration - Number.EPSILON * 8) nextStage();
+      } else if (state.phase === "respawning") {
         state.phaseRemaining -= dt;
-        if (state.phaseRemaining <= 0) {
-          if (state.phase === "respawning") restoreCheckpoint();
-          else nextStage();
-        }
+        if (state.phaseRemaining <= 0) restoreCheckpoint();
       } else if (state.phase === "recruiting") {
         state.recruitmentClock += dt;
         if (state.recruitmentCount >= 3) {
@@ -657,7 +771,8 @@ export function createSimulation(
     pause(): void {
       if (state.phase !== "title" && state.phase !== "ended" && state.phase !== "paused") {
         suspendedPhase = state.phase;
-        state.previousPhase = state.phase === "recruiting" ? "recruiting" : "playing";
+        state.previousPhase =
+          state.phase === "recruiting" || state.phase === "transition" ? state.phase : "playing";
         state.phase = "paused";
         notify();
       }
@@ -681,6 +796,9 @@ export function createSimulation(
     },
     replay(): void {
       Object.assign(state, createGameState(levels));
+      destinationReady = false;
+      destinationContact = false;
+      touchingCheckpoint = undefined;
       simulation.start();
     },
   };

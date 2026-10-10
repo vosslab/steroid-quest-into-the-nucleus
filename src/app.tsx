@@ -1,6 +1,8 @@
 import { batch, createEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import type { JSX } from "solid-js";
 import { CAMPAIGN } from "./levels";
+import { currentAction as getCurrentAction } from "./journey_presentation";
+import { getEncounterProgress } from "./progression";
 import { createRuntime } from "./runtime";
 import type { Runtime } from "./types/runtime";
 import type { LevelDefinition } from "./types/level";
@@ -22,6 +24,12 @@ export function App(): JSX.Element {
   // Sound is on by default, but runtime waits for the Start gesture before creating audio.
   const [muted, setMuted] = createSignal(false);
   const [elapsed, setElapsed] = createSignal(0);
+  const [requiredCompleted, setRequiredCompleted] = createSignal(0);
+  const [requiredTotal, setRequiredTotal] = createSignal(0);
+  const [currentObjective, setCurrentObjective] = createSignal("");
+  const [currentAction, setCurrentAction] = createSignal("");
+  const [destinationLabel, setDestinationLabel] = createSignal("");
+  const [destinationReady, setDestinationReady] = createSignal(false);
   const stage = (): LevelDefinition | undefined => CAMPAIGN[stageIndex()];
   const totalCollectibles = CAMPAIGN.reduce((total, level) => total + level.collectibles.length, 0);
   const overlay = (): boolean => phase() === "title" || phase() === "paused" || phase() === "ended";
@@ -31,6 +39,15 @@ export function App(): JSX.Element {
   function syncState(): void {
     const state = runtime?.getState();
     if (!state) return;
+    const level = CAMPAIGN[state.levelIndex];
+    if (!level) return;
+    const progress = getEncounterProgress(level, state.encounterPhases);
+    const action = getCurrentAction(
+      level,
+      state.encounterPhases,
+      state.levelTime,
+      state.player.attachment,
+    );
     batch(() => {
       setPhase(state.phase);
       setStageIndex(state.levelIndex);
@@ -39,6 +56,12 @@ export function App(): JSX.Element {
       setCheckpoint(state.checkpoint.id !== "start");
       setRecruitment(state.recruitmentCount);
       setElapsed(state.elapsed);
+      setRequiredCompleted(progress.completed);
+      setRequiredTotal(progress.total);
+      setCurrentObjective(progress.current?.objective ?? level.objective);
+      setCurrentAction(action?.text ?? "");
+      setDestinationLabel(level.destination?.label ?? "");
+      setDestinationReady(progress.ready);
     });
   }
 
@@ -128,8 +151,27 @@ export function App(): JSX.Element {
             <p>
               {transcriptionUnderway()
                 ? "RNA polymerase is producing RNA while the complex stays bound."
-                : stage()?.objective}
+                : currentObjective()}
             </p>
+            <Show when={requiredTotal() > 0}>
+              <div class="required-objective" role="status" aria-live="polite" aria-atomic="true">
+                <span class="required-count">
+                  Required {requiredCompleted()} / {requiredTotal()}
+                </span>
+                <span class="encounter-segments" aria-hidden="true">
+                  <For each={Array.from({ length: requiredTotal() })}>
+                    {(_, index) => <i classList={{ complete: index() < requiredCompleted() }} />}
+                  </For>
+                </span>
+                <span class="required-action">
+                  {phase() === "transition"
+                    ? `Entering ${destinationLabel()}`
+                    : destinationReady()
+                      ? `Ready: enter ${destinationLabel()}`
+                      : currentAction()}
+                </span>
+              </div>
+            </Show>
           </div>
           <div class="hud-tools">
             <span
@@ -169,7 +211,7 @@ export function App(): JSX.Element {
             width="960"
             height="540"
             tabindex={overlay() ? -1 : 0}
-            aria-label="Steroid Quest game world. Arrow Left and Arrow Right steer. Space pulses upward; hold Space for upward thrust."
+            aria-label="Steroid Quest game world. Arrow Left and Arrow Right steer. Space pulses upward; hold Space for upward thrust. Optional fine control: Arrow Up and Arrow Down provide gentle thrust."
           />
           <Show when={phase() === "title"}>
             <section
@@ -210,6 +252,10 @@ export function App(): JSX.Element {
                   <span>
                     <kbd>Space</kbd> <b>Pulse / hold to rise</b>
                   </span>
+                  <span class="optional-controls">
+                    <kbd>Up</kbd>
+                    <kbd>Down</kbd> <b>Optional fine control</b>
+                  </span>
                 </div>
               </div>
             </section>
@@ -229,6 +275,13 @@ export function App(): JSX.Element {
                 <p class="eyebrow">Take a breath</p>
                 <h2 id="pause-heading">Journey paused</h2>
                 <p>Your checkpoint and fragments are safe.</p>
+                <p class="pause-controls">
+                  <kbd>Left</kbd>
+                  <kbd>Right</kbd> steer; <kbd>Space</kbd> pulse / hold to rise.
+                  <br />
+                  Optional fine control: <kbd>Up</kbd>
+                  <kbd>Down</kbd> gentle thrust.
+                </p>
                 <button class="primary-button" onClick={() => play("resume")}>
                   Resume
                 </button>

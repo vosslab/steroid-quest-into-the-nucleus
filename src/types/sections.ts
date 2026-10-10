@@ -13,25 +13,29 @@ import type {
   Trigger,
 } from "./level";
 
-/** A chamber is local authored space inside one compact stage. */
+/** All positions are chamber-local. Placement translates them together into world space. */
 export type ChamberCommon = {
   id: string;
-  bounds: Rect;
+  placement: Point;
+  width: number;
+  height: number;
+  objective: string;
   entrance: Point;
   exit: Point;
   sequence: readonly EncounterStep[];
   recovery: Omit<FlowZone, "id">;
-  /** Explicit calm save area at a chamber join; recipes never infer one from an entrance. */
+  /** Exploration markers do not complete required encounters. */
   checkpoint?: Omit<CheckpointDefinition, "id" | "order">;
   optionalBranch?: Rect;
-  obstacles?: readonly Omit<Obstacle, "id">[];
-  fields?: readonly Omit<FlowZone, "id">[];
-  transports?: readonly Omit<Transport, "id">[];
-  hazards?: readonly Omit<Hazard, "id">[];
-  collectibles?: readonly Omit<Collectible, "id">[];
+  /** IDs and references are stable local names; the compiler namespaces them once. */
+  obstacles?: readonly Obstacle[];
+  fields?: readonly FlowZone[];
+  transports?: readonly Transport[];
+  hazards?: readonly Hazard[];
+  collectibles?: readonly Collectible[];
   decorations?: readonly Decoration[];
-  triggers?: readonly Omit<Trigger, "id">[];
-};
+  triggers?: readonly Trigger[];
+} & ({ required: true; completionCheckpoint: Point } | { required: false });
 
 /** A visible circulation field that redirects a player into a later approach. */
 export type CurrentLoopChamber = ChamberCommon & { kind: "current_loop" };
@@ -52,6 +56,7 @@ export type CompiledChambers = {
   flowZones: FlowZone[];
   transports: Transport[];
   encounters: Encounter[];
+  requiredEncounterIds: string[];
   hazards: Hazard[];
   checkpoints: CheckpointDefinition[];
   collectibles: Collectible[];

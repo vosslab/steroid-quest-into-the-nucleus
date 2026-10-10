@@ -244,6 +244,24 @@ export function createAudio(): {
         case "stage":
           air(1500 + event.levelIndex * 250, 0.45, 0.16);
           break;
+        case "destination-ready":
+          foregroundUntil = context.currentTime + 0.8;
+          [0, 7, 12].forEach((degree, index) =>
+            tone({
+              frequency: 392 * 2 ** (degree / 12),
+              delay: index * 0.1,
+              duration: 0.45,
+              amplitude: 0.065,
+              pan: (index - 1) * 0.25,
+            }),
+          );
+          break;
+        case "transition-start":
+          foregroundUntil = context.currentTime + 1;
+          air(1900, 0.7, 0.07);
+          tone({ frequency: 220, bend: 440, duration: 0.8, amplitude: 0.06, pan: -0.2 });
+          tone({ frequency: 330, bend: 660, duration: 0.8, amplitude: 0.045, pan: 0.2 });
+          break;
         case "collect":
           for (let index = 0; index < 3; index++)
             tone({

@@ -21,9 +21,10 @@ export function transportRoute(
   ctx.strokeStyle = transport.kind === "channel" ? "#8ce9ffaf" : "#ffe0a3a4";
   ctx.lineWidth = transport.kind === "channel" ? transport.radius * 2 : 3;
   if (transport.kind === "channel") {
-    ctx.globalAlpha = 0.18;
+    const sceneAlpha = ctx.globalAlpha;
+    ctx.globalAlpha = sceneAlpha * 0.18;
     ctx.stroke();
-    ctx.globalAlpha = 0.82;
+    ctx.globalAlpha = sceneAlpha * 0.82;
     ctx.lineWidth = 2;
   }
   ctx.setLineDash(transport.kind === "channel" ? [4, 10] : [7, 8]);

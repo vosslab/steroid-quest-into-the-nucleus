@@ -34,6 +34,7 @@ export function createGameState(levels: readonly LevelDefinition[]): SimulationS
     levelTime: 0,
     deathCount: 0,
     phaseRemaining: 0,
+    transition: undefined,
     previousPhase: "playing",
   };
 }

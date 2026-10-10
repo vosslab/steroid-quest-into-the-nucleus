@@ -2,6 +2,8 @@ import type { InputCommand, InputController, InputFrame } from "./types/input";
 
 const LEFT = new Set(["ArrowLeft"]);
 const RIGHT = new Set(["ArrowRight"]);
+const UP = new Set(["ArrowUp"]);
+const DOWN = new Set(["ArrowDown"]);
 const PULSE = new Set(["Space"]);
 const COMMANDS: Readonly<Record<string, InputCommand>> = { Escape: "pause", KeyR: "retry" };
 
@@ -22,6 +24,8 @@ export function createInput(
       !ownsFocus() ||
       (!LEFT.has(event.code) &&
         !RIGHT.has(event.code) &&
+        !UP.has(event.code) &&
+        !DOWN.has(event.code) &&
         !PULSE.has(event.code) &&
         !Object.prototype.hasOwnProperty.call(COMMANDS, event.code))
     )
@@ -60,6 +64,8 @@ export function createInput(
       const frame = {
         left: [...LEFT].some((key) => held.has(key)),
         right: [...RIGHT].some((key) => held.has(key)),
+        up: [...UP].some((key) => held.has(key)),
+        down: [...DOWN].some((key) => held.has(key)),
         pulseHeld: [...PULSE].some((key) => held.has(key)),
         pulsePressed,
       };

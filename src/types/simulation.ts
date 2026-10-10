@@ -1,4 +1,4 @@
-import type { Rect, Point } from "./level";
+import type { Encounter, Rect, Point } from "./level";
 import type { InputFrame } from "./input";
 export type Attachment = {
   kind: "transport" | "sticky";
@@ -18,6 +18,19 @@ export type PlayerState = Rect & {
 export type CheckpointState = { id: string; levelIndex: number; order: number; spawn: Point };
 export type GamePhase =
   "title" | "playing" | "paused" | "transition" | "respawning" | "recruiting" | "ended";
+/** Simulation seconds; pause freezes this state and retry cancels it. */
+export type TransitionState = {
+  readonly destinationId: string;
+  readonly elapsed: number;
+  readonly duration: number;
+};
+/** Purely derived from level requirements and encounterPhases, never stored in session state. */
+export type EncounterProgress = {
+  current: Encounter | undefined;
+  completed: number;
+  total: number;
+  ready: boolean;
+};
 export type SimulationState = {
   phase: GamePhase;
   levelIndex: number;
@@ -34,7 +47,8 @@ export type SimulationState = {
   levelTime: number;
   deathCount: number;
   phaseRemaining: number;
-  previousPhase: "playing" | "recruiting";
+  transition: TransitionState | undefined;
+  previousPhase: "playing" | "recruiting" | "transition";
 };
 export type GameEvent =
   | { type: "state" }
@@ -47,6 +61,8 @@ export type GameEvent =
   | { type: "bounce"; obstacleId: string }
   | { type: "capture" | "release"; id: string }
   | { type: "encounter"; id: string; phase: number }
+  | { type: "destination-ready"; destinationId: string }
+  | { type: "transition-start"; destinationId: string }
   | { type: "pulse" }
   | { type: "bound" }
   | { type: "hre" }

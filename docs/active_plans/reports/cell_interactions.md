@@ -23,10 +23,11 @@
 
 ## Verification
 
-[tests/test_interactions.mjs](../../../tests/test_interactions.mjs) adds five stable behavior checks:
-directional launches on moving gel with steering, updraft lift and opposing input, immediate force
-exit with retained momentum, bounded overlapping currents independent of their authored order,
-and pause/retry restoring an ordinary safe spawn.
+The retired `tests/test_interactions.mjs` added five stable behavior checks: directional launches
+on moving gel with steering, updraft lift and opposing input, immediate force exit with retained
+momentum, bounded overlapping currents independent of their authored order, and pause/retry
+restoring an ordinary safe spawn. Those checks are now consolidated in
+[tests/test_simulation.mjs](../../../tests/test_simulation.mjs).
 
 - `node --import tsx --test tests/test_interactions.mjs tests/test_simulation.mjs`: 15 pass.
 - `npx tsc --noEmit -p tsconfig.json`: pass after concurrent renderer integration completed.
