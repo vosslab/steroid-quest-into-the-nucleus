@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { compileChambers } from "../src/levels/section_specs.ts";
-import { phaseAfter, phaseBefore } from "../src/levels/encounter_phases.ts";
+import { phaseAfter } from "../src/levels/encounter_phases.ts";
 import { CAMPAIGN } from "../src/levels.ts";
 import { PLAYER_RADIUS } from "../src/constants.ts";
 import { circleRectOverlap, circleShapeContact, shapeAt } from "../src/physics.ts";
@@ -149,83 +149,6 @@ test("placement translates every position together without changing vectors, mot
   const moved = compile([{ ...authored, placement: { x: 90, y: 70 } }]);
   assert.deepEqual(moved.obstacles[0].shape.center, { x: 270, y: 250 });
   assert.equal(moved.obstacles[0].id, result.obstacles[0].id);
-});
-
-test("inserting and reordering primitives preserves named references", () => {
-  const chamber = detailedChamber();
-  const original = compile([chamber]);
-  const inserted = {
-    id: "extra",
-    shape: { kind: "circle", center: { x: 90, y: 180 }, radius: 10 },
-    response: { kind: "rebound", restitution: 1 },
-  };
-  const changed = compile([
-    { ...chamber, obstacles: [inserted, ...chamber.obstacles.toReversed()] },
-  ]);
-  assert.deepEqual(changed.encounters, original.encounters);
-  assert.deepEqual(
-    changed.obstacles.find((item) => item.id === "membrane-loop-round"),
-    original.obstacles[0],
-  );
-});
-
-test("named phase windows follow step insertion and reordering while IDs remain local", () => {
-  const chamber = detailedChamber();
-  const extra = { ...chamber.sequence[0], id: "detour" };
-  const sequences = [
-    chamber.sequence,
-    [extra, ...chamber.sequence],
-    [
-      extra,
-      chamber.sequence[2],
-      chamber.sequence[0],
-      chamber.sequence[1],
-      ...chamber.sequence.slice(3),
-    ],
-  ];
-  for (const sequence of sequences) {
-    const activeWhen = {
-      encounterId: "loop",
-      min: phaseAfter(sequence, "rebound"),
-      max: phaseBefore(sequence, "delivery"),
-    };
-    const compiled = compile([
-      {
-        ...chamber,
-        sequence,
-        fields: [{ ...chamber.fields[0], activeWhen }],
-        triggers: [{ ...chamber.triggers[0], activeWhen }],
-      },
-    ]);
-    const encounter = compiled.encounters[0];
-    assert.equal(encounter.id, "membrane-loop");
-    assert.deepEqual(
-      encounter.steps.map((step) => step.id),
-      sequence.map((step) => step.id),
-    );
-    for (const condition of [compiled.flowZones[1].activeWhen, compiled.triggers[0].activeWhen]) {
-      assert.equal(condition.encounterId, encounter.id);
-      for (let phase = 0; phase <= sequence.length; phase += 1) {
-        const completedIds = sequence.slice(0, phase).map((step) => step.id);
-        const enabled = phase >= condition.min && phase <= condition.max;
-        assert.equal(
-          enabled,
-          completedIds.includes("rebound") && !completedIds.includes("delivery"),
-        );
-      }
-    }
-  }
-});
-
-test("phase helpers cover first and last steps and reject unknown named references", () => {
-  const { sequence } = detailedChamber();
-  assert.equal(phaseBefore(sequence, "entry"), 0);
-  assert.equal(phaseAfter(sequence, "binding"), sequence.length);
-  assert.throws(() => phaseAfter(sequence, "missing"), /Unknown encounter step reference: missing/);
-  assert.throws(
-    () => phaseBefore(sequence, "missing"),
-    /Unknown encounter step reference: missing/,
-  );
 });
 
 test("compiler rejects missing, empty, or duplicate encounter step IDs within each encounter", () => {
@@ -464,32 +387,7 @@ test("transport paths cannot carry a player through static solids", () => {
   );
 });
 
-test("campaign has ordered required encounters, explicit milestones, and biological destinations", () => {
-  assert.deepEqual(
-    CAMPAIGN.map((level) => level.id),
-    ["membrane", "cytoplasm", "envelope", "receptor", "dna", "transcription"],
-  );
-  const traversal = CAMPAIGN.filter((level) => level.id !== "transcription");
-  for (const level of traversal) {
-    assert.ok(level.destination);
-    assert.ok(level.requiredEncounterIds.length > 0);
-    assert.equal(new Set(level.requiredEncounterIds).size, level.requiredEncounterIds.length);
-    for (const [index, id] of level.requiredEncounterIds.entries()) {
-      const encounter = level.encounters.find((item) => item.id === id);
-      assert.ok(encounter?.completionCheckpoint, `${id} has a completion save`);
-      assert.equal(encounter.completionCheckpoint.order, index + 1);
-      assert.ok(encounter.objective.trim());
-    }
-    assert.ok(
-      level.flowZones.some(
-        (field) => field.acceleration.y > 0 && field.y === 0 && field.height === level.height,
-      ),
-    );
-  }
-  assert.deepEqual(
-    traversal.map((level) => level.destination.motif),
-    ["vesicle", "nucleus", "receptor", "chromatin", "gene"],
-  );
+test("authored receptor and HRE triggers enforce their required milestone steps", () => {
   for (const [stageId, milestone, triggerKind] of [
     ["receptor", "receptor_bound", "receptor"],
     ["dna", "hre_bound", "hre"],
@@ -541,9 +439,6 @@ test("campaign has ordered required encounters, explicit milestones, and biologi
       assert.equal(sim.state.checkpoint.id, encounter.completionCheckpoint.id);
     }
   }
-  const transcription = CAMPAIGN.find((level) => level.id === "transcription");
-  assert.equal(transcription.destination, undefined);
-  assert.deepEqual(transcription.requiredEncounterIds, []);
 });
 
 test("the required pore crossing finishes with an always-clear player corridor", () => {

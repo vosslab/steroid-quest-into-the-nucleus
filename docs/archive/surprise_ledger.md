@@ -58,7 +58,7 @@ Stages own ordering, objectives, theme, captions, and combinations of these reci
 `SectionSpec` includes all five recipes alongside tunnels, terraces, and bounce chambers.
 The compiler switches explicitly over every discriminant and lowers recipes through the focused
 pattern module. Exact accepted ranges and generated recovery checks are documented in
-[LEVEL_DESIGN.md](../../LEVEL_DESIGN.md); source remains authoritative.
+[LEVEL_DESIGN.md](../LEVEL_DESIGN.md); source remains authoritative.
 
 ## Implementation lanes
 
@@ -83,28 +83,28 @@ and report documents; source and shell changes remain with their respective owne
 - Baseline/prerequisite typechecks and prerequisite formatting: PASS.
 - One-time geometry probe: PASS for orbit endpoints and legacy sinusoidal motion.
 - Infrastructure source specification: PASS in
-  [surprise_infra_spec.md](../reports/surprise_infra_spec.md); 31 focused Node tests pass.
+  [surprise_infra_spec.md](../active_plans/reports/surprise_infra_spec.md); 31 focused Node tests pass.
 - Fresh infrastructure quality: PASS in
-  [surprise_infra_quality.md](../reports/surprise_infra_quality.md), including sampled parameter,
+  [surprise_infra_quality.md](../active_plans/reports/surprise_infra_quality.md), including sampled parameter,
   full-cycle orbit, and mock Canvas probes within their stated scope.
 - Nonblocking payoff-clock observation: closed by renderer elapsed-clock correction and typecheck.
 - Manager infrastructure integration: `./check_codebase.sh` passes, including 36 Node tests;
   rebuilt browser smoke passes two tests; final authored integration also passes below.
 - Cell/nuclear source probes: PASS in their author reports, with ordinary controls only.
-- Fresh authored source-spec: PASS in [surprise_levels_spec.md](../reports/surprise_levels_spec.md),
+- Fresh authored source-spec: PASS in [surprise_levels_spec.md](../active_plans/reports/surprise_levels_spec.md),
   including all 30 ordinary checkpoint bodies and elapsed/payoff pause behavior.
-- Fresh campaign quality: PASS in [surprise_levels_quality.md](../reports/surprise_levels_quality.md);
+- Fresh campaign quality: PASS in [surprise_levels_quality.md](../active_plans/reports/surprise_levels_quality.md);
   fresh 31 focused tests, typecheck, and receptor/DNA ordinary-controls traversal with zero deaths.
 - Final rebuilt browser smoke: PASS, two tests after both authored sources completed.
 - Accepted built controls-only walk: PASS, 111.833 wall seconds / 111.66 simulation seconds,
   all six stages, one deliberate hazard death, 13/27 fragments, and about 0.42-second checkpoint
   recovery with fragment retention. All five encounters, cache return, three recruitment windows,
   connected RNA, ending, and Replay are observed; 58 captures, no errors/source drift, matching
-  served/build hashes. Final details live in [surprise_walkthrough.md](../reports/surprise_walkthrough.md).
+  served/build hashes. Final details live in [surprise_walkthrough.md](../active_plans/reports/surprise_walkthrough.md).
 - Built narrow/reduced-motion lifecycle: PASS at 390 pixels; Start/move/jump/Pause/Resume/Retry,
   same canvas, maximum one pending animation callback. Built orbit carry covers 450 ms;
   full-cycle orbit and armed timer pause remain separately attributed fixed-step checks.
-- Independent final integration: PASS in [surprise_integration.md](../reports/surprise_integration.md),
+- Independent final integration: PASS in [surprise_integration.md](../active_plans/reports/surprise_integration.md),
   with all 32 recorded hashes matching and eight accepted scenes visually inspected.
 - Final authored `./check_codebase.sh`: PASS, including 36 Node tests; explicit
   `./build_github_pages.sh`: PASS. Fresh full Python hygiene after review docs: 1033 tests pass in 1.74 seconds.

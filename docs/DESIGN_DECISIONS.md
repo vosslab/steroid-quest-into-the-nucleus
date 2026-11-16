@@ -49,6 +49,24 @@ never recreate the animation loop or mutate progression directly.
 
 **Owner.** [SOLID_MODEL.md](SOLID_MODEL.md) and [src/types/simulation.ts](../src/types/simulation.ts).
 
+### Touch adapts the existing input
+
+**Decision.** Pass typed persistent control refs into the input controller. A relative direction
+pad and separate Pulse map to the existing InputFrame, combining independently with keyboard.
+Use owned pointer capture, clear transient input at lifecycle boundaries, and retain quick tap
+edges until sampled. Keep controls outside the full landscape camera; portrait pauses until
+explicit Resume after rotation.
+
+**Why.** The same simulation and authored campaign support touch without changing laptop
+controls, progression, camera coordinates or the mounted runtime.
+
+**Consequence.** Input validation and cleanup belong in input.ts, orientation pause in App,
+and mobile layout in coarse-pointer CSS. The acceptance route uses real CDP touch contacts
+through the existing route controller and reads observations without modifying game state.
+
+**Owner.** [SOLID_MODEL.md](SOLID_MODEL.md), [src/input.ts](../src/input.ts) and
+[src/types/input.ts](../src/types/input.ts).
+
 ### Procedural canvas presentation
 
 **Decision.** Draw the six environments, player, and effects with Canvas 2D; use synthesized
@@ -78,7 +96,8 @@ Transport rides, local forces, and organelle rebounds remain explicitly arcade a
 ### Preserve shell build interfaces
 
 **Decision.** Compile Solid JSX through the esbuild JavaScript API and keep `dist/` as the
-artifact consumed by the existing preview and browser-test scripts.
+artifact consumed by the existing preview and browser-test scripts. Build the canonical
+`src/main.ts` entry and load the base stylesheet before the mobile stylesheet.
 
 **Why.** The established shell commands remain the public build and verification entry points.
 

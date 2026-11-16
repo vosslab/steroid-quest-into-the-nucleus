@@ -1,5 +1,6 @@
 import type { LevelDefinition } from "./level";
 import type { SimulationState, EventHandler } from "./simulation";
+import type { TouchControls } from "./input";
 export type Runtime = {
   start(): void;
   pause(): void;
@@ -14,4 +15,5 @@ export type RuntimeOptions = {
   canvas: HTMLCanvasElement;
   levels: readonly LevelDefinition[];
   onEvent: EventHandler;
+  touchControls: TouchControls;
 };

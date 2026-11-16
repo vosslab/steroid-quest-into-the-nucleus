@@ -9,6 +9,10 @@ upward pulse, or hold it for gentler lift. The cell supplies currents, rebounds,
 rides. Follow the current action and complete required encounters to activate each biological
 destination. Keep exploring until a growing RNA transcript announces **GENE EXPRESSION ACTIVATED**.
 
+On a touch device, turn sideways and drag the direction pad to steer. Use the separate **Pulse**
+button to pulse upward or hold to rise. The controls sit beside the full game world. Turning to
+portrait pauses the journey; turn back and tap **Resume**. See [playing instructions](docs/USAGE.md).
+
 <!-- screenshots:begin (managed by screenshot-docs) -->
 ![Red steroid above the giant mitochondrial flank as the upward current opens](docs/screenshots/giant_mitochondrion_flank.png)
 ![Red steroid entering the ready nucleus destination after all cytoplasm encounters](docs/screenshots/nucleus_destination_ready.png)
@@ -41,7 +45,7 @@ campaign. Required encounters provide the added activity, with no minimum-durati
 
 ## Quick start
 
-Use Node.js, npm, Python 3, and a browser with a keyboard. From the repository root:
+Use Node.js, npm, Python 3, and a browser with a keyboard or touch input. From the repository root:
 
 ```sh
 npm install
@@ -68,6 +72,8 @@ Left, Right, and Space remain the primary controls. Optional Up/Down provides ge
 adjustment; it cannot release attachments or perform transcription actions. Required routes must
 also work with the three primary keys. There is no global gravity: visible descending and returning
 currents provide recovery.
+Touch steering maps to these same four directions. Pulse maps to Space, including escape and
+transcription recruitment. A touch release leaves keyboard holds intact, and vice versa.
 Sound defaults to on and begins with Start. The title, play, and pause screens offer a sound toggle.
 The game pauses and silences sound when it loses focus. Retry and Replay retain the session's
 sound choice. Replay starts a fresh campaign; progress is never stored across page sessions.
@@ -98,10 +104,15 @@ source source_me.sh && python3 -m pytest tests/
 ```
 
 The game uses TypeScript, SolidJS, Canvas 2D, procedural illustrations, and synthesized sound.
-The build produces the GitHub Pages-ready `dist/` artifact. Remote publication is separate;
+The build compiles `src/main.ts` and copies `index.html`, `style.css`, and `mobile.css` into
+the GitHub Pages-ready `dist/` artifact. The HTML loads base styles before mobile styles.
+Remote publication is separate;
 the live link can still show an earlier release until publication.
 
 - [docs/SOLID_MODEL.md](docs/SOLID_MODEL.md): simulation authority, lifecycle, and biological limits.
+- [docs/USAGE.md](docs/USAGE.md): keyboard and landscape touch play, orientation and recovery.
+- [Mobile acceptance](docs/active_plans/reports/mobile_playability_acceptance.md): final artifact,
+  actual-touch campaign evidence and verification limits.
 - [docs/LEVEL_DESIGN.md](docs/LEVEL_DESIGN.md): chamber authoring, forces, and recovery.
 - [docs/PLAYWRIGHT_USAGE.md](docs/PLAYWRIGHT_USAGE.md): browser setup and capture usage.
 - [docs/active_plans/reports/fluid_walkthrough.md](docs/active_plans/reports/fluid_walkthrough.md):

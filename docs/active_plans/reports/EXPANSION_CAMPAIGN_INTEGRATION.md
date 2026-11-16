@@ -9,8 +9,9 @@ The approved [longer_cellular_journeys.md](../../archive/longer_cellular_journey
 Edited only [cell.ts](../../../src/levels/cell.ts),
 [nucleus.ts](../../../src/levels/nucleus.ts),
 [test_level_sections.mjs](../../../tests/test_level_sections.mjs), and this report.
-[test_surprise_patterns.mjs](../../../tests/test_surprise_patterns.mjs) needed no further changes:
-its inline recipe fixtures already protect translation, recovery, and named delivery references.
+The former recipe test `tests/test_surprise_patterns.mjs` needed no further changes at integration:
+its inline recipe fixtures already protected translation, recovery, and named delivery references.
+It was retired after the 2026-11-15 test prune.
 Preserved concurrent work and made no Git index changes.
 
 ## Composition and sizes

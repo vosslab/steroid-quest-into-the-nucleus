@@ -15,11 +15,11 @@ export type PlayerState = Rect & {
   attachment: Attachment | undefined;
   captureCooldown: number;
 };
-export type CheckpointState = { id: string; levelIndex: number; order: number; spawn: Point };
+type CheckpointState = { id: string; levelIndex: number; order: number; spawn: Point };
 export type GamePhase =
   "title" | "playing" | "paused" | "transition" | "respawning" | "recruiting" | "ended";
 /** Simulation seconds; pause freezes this state and retry cancels it. */
-export type TransitionState = {
+type TransitionState = {
   readonly destinationId: string;
   readonly elapsed: number;
   readonly duration: number;

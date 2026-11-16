@@ -784,11 +784,3 @@ details p {
     gap: 5px;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    transition-duration: 0s !important;
-  }
-}

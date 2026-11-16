@@ -11,7 +11,7 @@ export function overlaps(a: Rect, b: Rect): boolean {
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 }
 
-export function pointInRect(point: Point, rect: Rect): boolean {
+function pointInRect(point: Point, rect: Rect): boolean {
   return (
     point.x >= rect.x &&
     point.x <= rect.x + rect.width &&

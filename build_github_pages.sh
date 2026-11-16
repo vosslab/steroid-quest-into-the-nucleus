@@ -8,15 +8,14 @@
 # Contract:
 #   - Wipes dist/ from scratch.
 #   - Type-checks via 'tsc --noEmit -p tsconfig.json'.
-#   - Resolves the entry: src/main.ts preferred, src/init.ts legacy fallback.
-#     Aborts with an actionable error if neither exists.
-#   - Verifies src/index.html and src/style.css exist before copying;
+#   - Bundles the canonical src/main.ts entry.
+#   - Verifies the entry, HTML shell, and both stylesheets before copying;
 #     aborts with an actionable error if missing.
 #   - Verifies src/index.html references dist/main.js with a module script
 #     tag (warns if missing -- the page will load but main.js is dead).
 #   - Bundles the entry into dist/main.js with esbuild (ESM, es2020,
 #     browser, minified, with sourcemap).
-#   - Copies src/index.html and src/style.css into dist/.
+#   - Copies src/index.html, src/style.css, and src/mobile.css into dist/.
 #   - Writes dist/.nojekyll so GitHub Pages serves files starting with _.
 #   - Asserts dist/index.html and dist/main.js exist before exiting.
 #
@@ -25,19 +24,8 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-# Resolve entry point.
-if [ -f "src/main.ts" ]; then
-	ENTRY="src/main.ts"
-elif [ -f "src/init.ts" ]; then
-	ENTRY="src/init.ts"
-	echo "WARNING: using legacy src/init.ts. Rename to src/main.ts." >&2
-else
-	echo "ERROR: no entry point. Create src/main.ts (preferred) or src/init.ts." >&2
-	exit 1
-fi
-
 # Verify required static assets before any destructive step.
-for required in src/index.html src/style.css; do
+for required in src/main.ts src/index.html src/style.css src/mobile.css; do
 	if [ ! -f "$required" ]; then
 		echo "ERROR: required source file missing: $required" >&2
 		case "$required" in
@@ -62,10 +50,10 @@ mkdir -p dist
 
 npx tsc --noEmit -p tsconfig.json
 
-node pipeline/build.mjs "$ENTRY"
+node pipeline/build.mjs
 
 cp src/index.html dist/index.html
-cp src/style.css dist/style.css
+cp src/style.css src/mobile.css dist/
 touch dist/.nojekyll
 
 test -f dist/index.html

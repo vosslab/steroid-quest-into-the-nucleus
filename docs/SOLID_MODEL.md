@@ -90,6 +90,9 @@ velocity look-ahead, including backward travel.
 Disposal cancels the animation frame, disconnects the ResizeObserver, removes resize and
 motion-preference listeners, disposes input and rendering, and closes any created audio context.
 Input disposal removes window, canvas, and document listeners and clears held keys.
+Typed direction-pad and Pulse DOM references pass from App through RuntimeOptions to input.
+Touch listeners attach to those persistent controls once, and disposal releases owned captures
+and removes every listener. Touch controls never write simulation state.
 
 Presentation consumes simulation events and time. Pause freezes movement and effect ages.
 Reduced motion simplifies particles and decorative flexing while preserving directional cues,
@@ -109,7 +112,7 @@ including death and transition tails. After initialization, the context stays si
 during pause/mute to avoid suspend/resume races. Disposal closes it. Resource and signal checks
 are separate from subjective listening judgment.
 
-## Keyboard input boundary
+## Keyboard and touch input
 
 [src/input.ts](../src/input.ts) accepts ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Space, Escape,
 and KeyR only while the canvas owns focus. Browser defaults are suppressed only for recognized
@@ -125,6 +128,27 @@ A Space press is distinct from held Space. Auto-repeat never creates another pul
 another recruitment attempt. Window blur, canvas blur, and hidden-page visibility clear held
 keys and pause. Resume, retry, and Replay clear input before restoring canvas focus. Menu
 Escape stops propagation so resuming does not immediately pause the game again.
+
+Coarse landscape pointers receive a direction pad and a separate Pulse button. The pad measures
+CSS displacement from the initial contact, with a 12 pixel deadzone independently on each axis,
+then maps to the existing directional booleans. Pulse down creates one pending edge and held
+thrust. Normal release ends held thrust while preserving an unsampled tap. Cancel and lost capture
+discard its pending edge. Keyboard and touch have independent held state and pending edges;
+sampling combines them with OR and consumes each pending edge once.
+
+Each control owns one pointer ID and captures it through movement outside the button. Other
+pointers cannot replace it. Pause, Retry, Replay, transition capture, blur, hidden visibility and
+disposal clear every held source and pending edge and release capture. Pointerdown prevents
+control focus changes; HUD buttons prevent compatibility mousedown focus while preserving native
+touch clicks, including WebKit. Only finite touch coordinates and a focused canvas in coarse
+landscape mode are accepted (ASVS 2.2.1).
+
+The coarse landscape shell places controls outside the complete 16:9 camera, keeps the current
+action/progress and Pause visible, and fits 100dvh with safe-area padding. Fine-pointer layout
+retains the existing desktop styles. Coarse portrait orientation pauses through the runtime,
+clears input and presents a rotation prompt. Returning to landscape requires explicit Resume;
+orientation never resumes play automatically. Title, pause and ending menus remain usable in
+portrait. The mounted canvas/runtime, logical viewport, simulation and level data stay unchanged.
 
 ## Biological model limits
 

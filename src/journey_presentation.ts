@@ -3,7 +3,7 @@ import { getEncounterProgress } from "./progression";
 import type { EncounterStep, LevelDefinition, Point, Rect, Shape } from "./types/level";
 import type { Attachment } from "./types/simulation";
 
-export type ActionCue = { text: string; center: Point; region?: Rect };
+type ActionCue = { text: string; center: Point; region?: Rect };
 
 export function shapeBounds(shape: Shape): Rect {
   if (shape.kind === "roundedRect") return shape;
@@ -28,7 +28,7 @@ function center(rect: Rect): Point {
 }
 
 /** Action wording comes from authored gameplay labels, independently of optional captions. */
-export function actionText(step: EncounterStep): string {
+function actionText(step: EncounterStep): string {
   if (step.label) return step.label;
   switch (step.kind) {
     case "region":

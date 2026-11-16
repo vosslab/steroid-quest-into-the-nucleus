@@ -142,13 +142,13 @@ Pause and focus loss freeze the transition. Retry cancels it and restores the co
 | M3 | Expand the campaign | Convert the remaining traversal stages | Deliver the longer journey |
 | M4 | Autonomous acceptance | Independent assessments, timing, corrections, full gates | Finish with a validated local build |
 
-**M1 - Entry:** current implementation and rules inspected.  
-**Deliverables:** input extension, local-coordinate compiler, stable references, encounter completion and checkpoint behavior.  
-**Exit:** focused behavior tests pass; moving a sample chamber requires only changing its placement; skipping its encounter cannot unlock its destination.  
+**M1 - Entry:** current implementation and rules inspected.
+**Deliverables:** input extension, local-coordinate compiler, stable references, encounter completion and checkpoint behavior.
+**Exit:** focused behavior tests pass; moving a sample chamber requires only changing its placement; skipping its encounter cannot unlock its destination.
 **Parallel-plan ready: no** until shared contracts are settled.
 
-**M2 - Depends on M1:** author and verify the complete membrane route below, including the first biological destination and transition.  
-**Exit:** actual-controls traversal proves all four completions, early-exit rejection, backward-sweep recovery, retry persistence, and three-key-only completion.  
+**M2 - Depends on M1:** author and verify the complete membrane route below, including the first biological destination and transition.
+**Exit:** actual-controls traversal proves all four completions, early-exit rejection, backward-sweep recovery, retry persistence, and three-key-only completion.
 **Parallel-plan ready: yes** for presentation and content after the contracts are fixed.
 
 **M3 - Depends on M2:** expand the remaining stages using the proven authoring model.
@@ -166,11 +166,11 @@ The intended encounter sequence and pacing allocation are:
 
 Missing the pore remains an optional recovery, never a required mistake. Each new chamber combines existing mechanics and provides a permanent descent or return route.
 
-**M3 Exit:** every stage completes with actual controls, every required encounter saves progress, and shortcuts rejoin correctly.  
+**M3 Exit:** every stage completes with actual controls, every required encounter saves progress, and shortcuts rejoin correctly.
 **Parallel-plan ready: yes** for independent stage groups using the accepted shared contracts.
 
-**M4 - Depends on M3:** run the acceptance process below and correct failures until it passes.  
-**Exit:** all behavior gates, independent agent assessments, pacing evidence, documentation, and local delivery are complete.  
+**M4 - Depends on M3:** run the acceptance process below and correct failures until it passes.
+**Exit:** all behavior gates, independent agent assessments, pacing evidence, documentation, and local delivery are complete.
 **Parallel-plan ready: yes** for independent behavior, presentation, and pacing assessments.
 
 ## Test and verification strategy

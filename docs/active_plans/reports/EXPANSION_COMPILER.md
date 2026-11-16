@@ -82,8 +82,9 @@ Tests:
 
 - [test_level_sections.mjs](../../../tests/test_level_sections.mjs): translation, references,
   insertion/reordering, required order, local bounds, calm spawns, paths, campaign contracts.
-- [test_surprise_patterns.mjs](../../../tests/test_surprise_patterns.mjs): local return streams,
-  transport paths, and named delivery steps. Exact campaign tuning/geometry assertions are removed.
+- Former recipe test `tests/test_surprise_patterns.mjs`: covered local return streams,
+  transport paths, and named delivery steps; retired after the 2026-11-15 test prune.
+  Exact campaign tuning/geometry assertions had already been removed.
 
 ## Verification
 

@@ -3,7 +3,7 @@ import { solidPlugin } from "esbuild-plugin-solid";
 
 // Solid's JSX compiler requires the JavaScript API plugin path.
 await build({
-  entryPoints: [process.argv[2] ?? "src/main.ts"],
+  entryPoints: ["src/main.ts"],
   bundle: true,
   format: "esm",
   target: "es2020",

@@ -43,14 +43,18 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     if (level) audio.update(simulation.state, level.id);
     accumulator = 0;
   };
-  const input = createInput(canvas, (command) => {
-    if (command === "retry") {
-      input.clear();
-      simulation.retry();
-    } else if (command === "focus-loss") pause();
-    else if (simulation.state.phase === "paused") resume();
-    else pause();
-  });
+  const input = createInput(
+    canvas,
+    (command) => {
+      if (command === "retry") {
+        input.clear();
+        simulation.retry();
+      } else if (command === "focus-loss") pause();
+      else if (simulation.state.phase === "paused") resume();
+      else pause();
+    },
+    options.touchControls,
+  );
   const focus = (): void => {
     canvas.focus({ preventScroll: true });
   };

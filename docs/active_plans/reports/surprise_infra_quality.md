@@ -12,7 +12,7 @@ separate gates; this review does not establish human enjoyment or rendered reada
 - Reviewed shared level/section/simulation contracts, game-state initialization, physics,
   simulation, section compilation, all five pattern recipes, renderer, kinetic art,
   surprise art, and their focused tests against
-  [surprise_ledger.md](../workstreams/surprise_ledger.md).
+  [surprise_ledger.md](../../archive/surprise_ledger.md).
 - Crumble expiry removes standing support before platform carry. Absent platforms are
   excluded from both collision passes. Reform checks current moving geometry. Countdown
   survives departure/recontact, pauses freeze it, and reset paths clear the authoritative map.

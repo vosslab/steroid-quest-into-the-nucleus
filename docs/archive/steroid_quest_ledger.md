@@ -22,7 +22,7 @@ it does not validate the new geometry, interactions, presentation, or frame chan
 | Kinetic cell art | Rendering, audio, and runtime event presentation | Source, offline audio, and campaign rendered acceptance pass |
 | Frame finish | CSS frame and responsive presentation | 18 rendered states pass, including doubled font size at 320 pixels |
 | Chaos walkthrough | Real-controls route and rendered evidence | Six-stage primary route and supplemental moving-support/summit captures pass |
-| Level specification | [LEVEL_DESIGN.md](../../LEVEL_DESIGN.md) | Complete; authored level evidence and built-route acceptance pass |
+| Level specification | [LEVEL_DESIGN.md](../LEVEL_DESIGN.md) | Complete; authored level evidence and built-route acceptance pass |
 | Chaos documentation | README, changelog, guidance, decisions, Solid model, this ledger | Complete; 212 focused documentation checks and diff hygiene pass |
 
 Agents preserve changes outside their exclusive scope. Shared type questions route through the
@@ -30,10 +30,10 @@ interaction owner before dependent changes. The documentation lane records settl
 after source evidence and separates earlier checks from fresh acceptance. No remote publication
 is part of this revision.
 
-Frame evidence: [frame_visual_acceptance.md](../reports/frame_visual_acceptance.md).
+Frame evidence: [frame_visual_acceptance.md](../active_plans/reports/frame_visual_acceptance.md).
 This verifies responsive presentation separately from the accepted campaign walkthrough and
 final JavaScript/geometry integration checks.
-Kinetic evidence: [kinetic_cell_art.md](../reports/kinetic_cell_art.md). Runtime routes
+Kinetic evidence: [kinetic_cell_art.md](../active_plans/reports/kinetic_cell_art.md). Runtime routes
 authoritative bounce/recruitment events to bounded presentation effects and optional audio;
 pause freezes effect ages and reduced motion uses static cues.
 Cell source checks complete membrane, cytoplasm, and envelope in 10.958, 48.708, and 13.667
@@ -51,16 +51,16 @@ roof secrets, then returns to the required route with zero deaths. Stage widths 
 - `./run_web_server.sh`: current local built preview at `http://localhost:8367`.
 - `./run_playwright_tests.sh --build`: two browser smoke tests pass in 2.2 seconds.
 - `source source_me.sh && python3 -m pytest -q`: final 1,024 repository tests pass in 1.59 seconds.
-- Fresh [chaos_spec.md](../reports/chaos_spec.md) passes six stage signature moments, 241 unique
+- Fresh [chaos_spec.md](../active_plans/reports/chaos_spec.md) passes six stage signature moments, 241 unique
   entity IDs, and 40 safe checkpoints. Static evidence remains separate from route traversal.
-- Fresh [chaos_quality.md](../reports/chaos_quality.md) passes source review, nine focused tests,
+- Fresh [chaos_quality.md](../active_plans/reports/chaos_quality.md) passes source review, nine focused tests,
   160 checkpoint idle probes across four motion phases, and 92 finite, balanced mock-canvas
   draws across normal and reduced motion. Built-browser acceptance remains separate.
-- [chaos_walkthrough.md](../reports/chaos_walkthrough.md) passes all six stages in 130.317 wall seconds (130.15
+- [chaos_walkthrough.md](../active_plans/reports/chaos_walkthrough.md) passes all six stages in 130.317 wall seconds (130.15
   simulation seconds), with one deliberate checkpoint death, 26/37 fragments, ordered receptor
   binding and HRE docking, three recruitment actions, emerging RNA, ending, and Replay. No
   browser errors or source drift were reported. This is a practiced automated route.
-- Fresh [chaos_integration.md](../reports/chaos_integration.md) passes the complete current
+- Fresh [chaos_integration.md](../active_plans/reports/chaos_integration.md) passes the complete current
   artifact, progression, recovery, lifecycle, and rendered readability. Personal inspection
   covers organelles, currents/springs, binding, DNA roof/HRE, recruitment, RNA, ending, narrow
   gameplay, and the supplemental filament summit and actual moving-support captures.
@@ -112,32 +112,32 @@ stay open until the affected lane applies and verifies the decision.
 - Retry restores the checkpoint while retaining fragments and milestones. Replay resets the session.
 - Rendering follows simulation state and keeps decorative molecular shapes separate from collisions.
 - Read-only canvas data attributes support browser observations; gameplay never consumes them.
-- Implementation details and lifecycle rules live in [docs/SOLID_MODEL.md](../../SOLID_MODEL.md).
+- Implementation details and lifecycle rules live in [docs/SOLID_MODEL.md](../SOLID_MODEL.md).
 
 ## Historical review evidence
 
 These reports preserve earlier review snapshots. Freshness and pending acceptance statements
 below describe those snapshots; current acceptance is recorded above.
 
-Foundation: [foundation_spec.md](../reports/foundation_spec.md) and
-[foundation_quality.md](../reports/foundation_quality.md).
-Infrastructure: [infrastructure_spec.md](../reports/infrastructure_spec.md) and
-[infrastructure_quality.md](../reports/infrastructure_quality.md).
-Earlier expanded campaign: [expanded_spec.md](../reports/expanded_spec.md) verifies 381 unique
+Foundation: [foundation_spec.md](../active_plans/reports/foundation_spec.md) and
+[foundation_quality.md](../active_plans/reports/foundation_quality.md).
+Infrastructure: [infrastructure_spec.md](../active_plans/reports/infrastructure_spec.md) and
+[infrastructure_quality.md](../active_plans/reports/infrastructure_quality.md).
+Earlier expanded campaign: [expanded_spec.md](../active_plans/reports/expanded_spec.md) verifies 381 unique
 entity IDs and 64 supported safe authored checkpoint spawns before the subsequent obstacle additions.
 Earlier campaign and finish findings
 are corrected, including organelle placement, receptor contact, moving nucleosome bodies,
 bilayer visibility, HRE/recruitment labels, authored checkpoint coverage, loop observations,
 and guidance provenance.
-Fresh user-steering reviews pass: [steering_spec.md](../reports/steering_spec.md) and
-[steering_quality.md](../reports/steering_quality.md). Algorithmic audio source and bounded
-signal/lifecycle evidence are in [algorithmic_audio.md](../reports/algorithmic_audio.md).
+Fresh user-steering reviews pass: [steering_spec.md](../active_plans/reports/steering_spec.md) and
+[steering_quality.md](../active_plans/reports/steering_quality.md). Algorithmic audio source and bounded
+signal/lifecycle evidence are in [algorithmic_audio.md](../active_plans/reports/algorithmic_audio.md).
 Focused built-browser audio/motion acceptance passes in
-[audio_visual_acceptance.md](../reports/audio_visual_acceptance.md), separately from the
+[audio_visual_acceptance.md](../active_plans/reports/audio_visual_acceptance.md), separately from the
 full campaign walkthrough.
-Fresh [final_integration.md](../reports/final_integration.md) accepts the exact built campaign,
+Fresh [final_integration.md](../active_plans/reports/final_integration.md) accepts the exact built campaign,
 loop/lifecycle ownership, all stage captures, and documentation. The later CSS-only styling
-is described in [frame_style.md](../reports/frame_style.md); its rendered acceptance is pending.
+is described in [frame_style.md](../active_plans/reports/frame_style.md); its rendered acceptance is pending.
 
 Seven infrastructure lint findings are corrected. Menu Escape propagation is corrected.
 Chromium was absent and installed through the standard Playwright setup. macOS MachPort
@@ -168,6 +168,6 @@ human enjoyment or the 8-12 minute target.
 - `source source_me.sh && python3 -m pytest -q`: 997 repository hygiene tests pass.
 - `git diff --check`: passes. Final documentation checks follow the remaining evidence update.
 - `./run_web_server.sh`: historical local built preview at `http://localhost:8053`.
-- [walkthrough.md](../reports/walkthrough.md): expanded real-controls progression completes in
+- [walkthrough.md](../active_plans/reports/walkthrough.md): expanded real-controls progression completes in
   293.286 wall seconds (293.15 simulation seconds), with two deaths, 37/64 fragments, all
   milestones, ending, and Replay. This is a practiced automated route, not a human first play.

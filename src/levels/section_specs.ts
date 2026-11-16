@@ -18,7 +18,7 @@ const MOVING_OBSTACLE_SAMPLES = 24;
 const finite = (value: number): boolean => Number.isFinite(value);
 
 /** Different encounters can advance independently, so only shared IDs can prove disjoint phases. */
-export function conditionsOverlap(
+function conditionsOverlap(
   first: PhaseCondition | undefined,
   second: PhaseCondition | undefined,
 ): boolean {

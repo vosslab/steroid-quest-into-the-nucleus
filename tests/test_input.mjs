@@ -5,6 +5,20 @@ import { createInput } from "../src/input.ts";
 
 class FakeTarget {
   #listeners = new Map();
+  #captures = new Set();
+
+  setPointerCapture(id) {
+    this.#captures.add(id);
+  }
+
+  hasPointerCapture(id) {
+    return this.#captures.has(id);
+  }
+
+  releasePointerCapture(id) {
+    this.#captures.delete(id);
+    this.emit("lostpointercapture", { pointerId: id, type: "lostpointercapture" });
+  }
 
   addEventListener(type, listener) {
     const listeners = this.#listeners.get(type) ?? new Set();
@@ -115,6 +129,90 @@ test("input accepts only arrows and one pulse per physical Space press", () => {
     assert.equal(input.sample().up, false);
     input.dispose();
   } finally {
+    globalThis.window = originalWindow;
+    globalThis.document = originalDocument;
+  }
+});
+
+test("touch capture composes with keyboard and retains quick taps only until sampled", () => {
+  const originalWindow = globalThis.window;
+  const originalDocument = globalThis.document;
+  const win = new FakeTarget();
+  const doc = new FakeTarget();
+  const canvas = new FakeTarget();
+  const direction = new FakeTarget();
+  const pulse = new FakeTarget();
+  doc.activeElement = canvas;
+  win.matchMedia = () => ({ matches: true });
+  globalThis.window = win;
+  globalThis.document = doc;
+  const pointer = (id, x = 50, y = 50, type = "pointerdown") => ({
+    pointerId: id,
+    clientX: x,
+    clientY: y,
+    pointerType: "touch",
+    type,
+    preventDefault() {},
+  });
+  const input = createInput(canvas, () => {}, { direction, pulse });
+  try {
+    direction.emit("pointerdown", { ...pointer(1), pointerType: "mouse" });
+    direction.emit("pointerdown", pointer(1, NaN));
+    assert.equal(direction.hasPointerCapture(1), false);
+    win.matchMedia = () => ({ matches: false });
+    pulse.emit("pointerdown", pointer(3));
+    assert.equal(pulse.hasPointerCapture(3), false);
+    win.matchMedia = () => ({ matches: true });
+    direction.emit("pointerdown", pointer(1));
+    direction.emit("pointermove", pointer(1, 62, 38));
+    assert.equal(input.sample().right, false);
+    direction.emit("pointermove", pointer(1, 80, 20));
+    assert.equal(input.sample().right, true);
+    assert.equal(input.sample().up, true);
+    // A second pointer cannot take over an owned direction or Pulse control.
+    direction.emit("pointerdown", pointer(2));
+    direction.emit("pointerup", pointer(2, 50, 50, "pointerup"));
+    assert.equal(input.sample().right, true);
+    win.emit("keydown", keyboard("ArrowRight"));
+    direction.emit("pointerup", pointer(1, 80, 20, "pointerup"));
+    assert.equal(input.sample().right, true);
+    direction.emit("pointerdown", pointer(1));
+    direction.emit("pointermove", pointer(1, 80));
+    win.emit("keyup", keyboard("ArrowRight"));
+    assert.equal(input.sample().right, true);
+    pulse.emit("pointerdown", pointer(3));
+    assert.equal(input.sample().pulseHeld, true);
+    pulse.emit("pointerup", pointer(3, 50, 50, "pointerup"));
+    assert.equal(input.sample().pulseHeld, false);
+    pulse.emit("pointerdown", pointer(3));
+    pulse.emit("pointerdown", pointer(4));
+    pulse.emit("pointerup", pointer(3, 50, 50, "pointerup"));
+    assert.equal(input.sample().pulsePressed, true);
+    assert.equal(input.sample().pulsePressed, false);
+    win.emit("keydown", keyboard("Space"));
+    pulse.emit("pointerdown", pointer(3));
+    pulse.emit("pointercancel", pointer(3, 50, 50, "pointercancel"));
+    assert.equal(input.sample().pulsePressed, true);
+    assert.equal(input.sample().pulseHeld, true);
+    win.emit("keyup", keyboard("Space"));
+    pulse.emit("pointerdown", pointer(3));
+    win.emit("keydown", keyboard("Space"));
+    win.emit("keyup", keyboard("Space"));
+    assert.equal(input.sample().pulseHeld, true);
+    pulse.emit("lostpointercapture", pointer(3, 50, 50, "lostpointercapture"));
+    assert.equal(input.sample().pulseHeld, false);
+    assert.equal(input.sample().pulsePressed, false);
+    pulse.emit("pointerdown", pointer(3));
+    input.clear();
+    assert.equal(pulse.hasPointerCapture(3), false);
+    assert.equal(direction.hasPointerCapture(1), false);
+    assert.equal(input.sample().right, false);
+    assert.equal(input.sample().pulsePressed, false);
+    input.dispose();
+    pulse.emit("pointerdown", pointer(3));
+    assert.equal(input.sample().pulseHeld, false);
+  } finally {
+    input.dispose();
     globalThis.window = originalWindow;
     globalThis.document = originalDocument;
   }

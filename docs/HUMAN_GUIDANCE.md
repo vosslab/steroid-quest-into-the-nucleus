@@ -8,6 +8,11 @@ origin belongs there too. Rules: [REPO_STYLE.md](REPO_STYLE.md).
 [PROPAGATED HEADER - ENTRIES BELOW ARE YOURS]
 <!-- VENDORED HEADER: END -->
 
+- Make the game playable on mobile without regressing laptop play. Use agent-run acceptance
+  through the complete journey, including transport release and timed recruitment.
+- Keep touch direction and Pulse separate; preserve the campaign, simulation, checkpoints,
+  session-only progress, complete camera view and one mounted runtime.
+
 - Make durable changes in starter-repo-template; consumer copies are vendored.
 - A temporary, easily removable wrapper is acceptable for the Graphify crash.
   Make the edited node count match the expected normalized count.

@@ -1,5 +1,5 @@
 // Actual-controls reference; selectors: runtime.ts observeState and app.tsx menu button names.
-// node --import tsx tests/playwright/campaign_walkthrough.mjs URL output [--membrane-prefix] [--standard-only]
+// node --import tsx tests/playwright/campaign_walkthrough.mjs URL output [--membrane-prefix] [--standard-only] [--touch]
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
@@ -9,10 +9,12 @@ import { installObservation } from "./helper_observation.mjs";
 import { createNavigation } from "./helper_navigation.mjs";
 import { referenceApproach, referenceDestination } from "./helper_campaign_route.mjs";
 import { CAMPAIGN } from "../../src/levels.ts";
+import { createTouchControls } from "./helper_touch.mjs";
 
 process.chdir(REPO_ROOT);
 const prefix = process.argv.includes("--membrane-prefix");
 const standardOnly = process.argv.includes("--standard-only");
+const touch = process.argv.includes("--touch");
 const output = process.argv[3] ?? "test-results/expansion/reference";
 await mkdir(output, { recursive: true });
 const sourceFiles = (await readdir("src", { recursive: true }))
@@ -23,6 +25,7 @@ const files = [
   "tests/playwright/helper_observation.mjs",
   "tests/playwright/helper_navigation.mjs",
   "tests/playwright/helper_campaign_route.mjs",
+  "tests/playwright/helper_touch.mjs",
   ...sourceFiles,
   "dist/main.js",
   "dist/style.css",
@@ -46,8 +49,13 @@ for (const file of files.filter((file) => file.startsWith("tests/playwright/")))
 }
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({
-  viewport: { width: 1280, height: 900 },
-  recordVideo: { dir: `${output}/video`, size: { width: 1280, height: 900 } },
+  viewport: touch ? { width: 844, height: 390 } : { width: 1280, height: 900 },
+  hasTouch: touch,
+  isMobile: touch,
+  recordVideo: {
+    dir: `${output}/video`,
+    size: touch ? { width: 844, height: 390 } : { width: 1280, height: 900 },
+  },
 });
 await installObservation(page);
 const errors = [],
@@ -56,11 +64,18 @@ const errors = [],
   trace = [],
   timings = [];
 const canvas = page.locator("canvas");
-const { state, keys, waitFor, steerTo, record, setLane } = createNavigation(page, canvas, trace);
+const controls = touch ? await createTouchControls(page) : page.keyboard;
+const { state, keys, waitFor, steerTo, record, setLane } = createNavigation(
+  page,
+  canvas,
+  trace,
+  controls,
+);
 const started = Date.now();
 let originalCanvas, standardStart, standardEnd, standardState;
 let finished = false;
 let recoveryDeliveries = false;
+let touchRecoveryChecked = false;
 page.on("pageerror", (error) => errors.push(error.message));
 
 async function capture(name) {
@@ -124,14 +139,18 @@ async function performStep(level, encounter, step, index) {
   const complete = (s) => (JSON.parse(s.encounterPhases)[encounter.id] ?? 0) > index;
   if (complete(await state())) return;
   const start = Number((await state()).elapsed);
-  if (recoveryDeliveries && step.kind === "transport_delivery") {
+  if (
+    (recoveryDeliveries || (touch && !touchRecoveryChecked)) &&
+    step.kind === "transport_delivery"
+  ) {
+    touchRecoveryChecked = true;
     assert.equal((await state()).attachmentId, step.transportId);
-    await page.keyboard.press("Space");
+    await controls.press("Space");
     await waitFor((s) => !s.attachmentId, `${goal}: early escape`, 3);
     assert.equal(JSON.parse((await state()).encounterPhases)[encounter.id], index);
     await capture(`ancillary_${encounter.id}_early_delivery_escape`);
     const retained = await state();
-    await page.keyboard.press("r");
+    await controls.press("r");
     await waitFor(
       (s) => !s.attachmentId && Math.abs(Number(s.playerVx)) < 1,
       `${goal}: pending delivery retry`,
@@ -270,7 +289,7 @@ async function checkLifecycle() {
   }
   assert.ok(peakRms > 0.0001, "Start produces real synthesized output");
   observations.push({ event: "audio-after-start", peakRms });
-  await page.keyboard.press("Escape");
+  await controls.press("Escape");
   await waitFor((s) => s.phase === "paused", "pause");
   await page.waitForTimeout(250);
   assert.ok((await page.evaluate(() => window.fluidObservation)).rms < 0.0001);
@@ -447,7 +466,7 @@ try {
   originalCanvas = await canvas.elementHandle();
   await waitFor((s) => s.phase === "playing", "start");
   await checkLifecycle();
-  setLane("standard");
+  setLane(touch ? "touch" : "standard");
   standardStart = Number((await state()).elapsed);
   for (const level of CAMPAIGN.filter((level) => level.id !== "transcription")) {
     await runStage(level);
@@ -467,7 +486,7 @@ try {
         3,
       );
       const count = Number((await state()).recruitmentCount);
-      await page.keyboard.press("Space");
+      await controls.press("Space");
       await waitFor((s) => Number(s.recruitmentCount) > count, "recruitment action", 2);
       assert.equal(Number((await state()).recruitmentCount), count + 1);
       record("transcription recruitment", await state(), "tap pulse", undefined, true);
@@ -499,6 +518,20 @@ try {
   assert.equal(frames.frames.pending, 1);
   assert.equal(frames.frames.maximum, 1);
   observations.push({ event: "standard-lifecycle", ...frames });
+  if (touch && !prefix) {
+    await page.getByRole("button", { name: "Replay", exact: true }).tap();
+    await waitFor((s) => s.phase === "playing" && s.stage === "membrane", "touch Replay");
+    const replayed = await state();
+    assert.equal(replayed.receptorBound, "false");
+    assert.equal(replayed.hreBound, "false");
+    assert.equal(replayed.recruitmentCount, "0");
+    assert.equal(replayed.requiredCompleted, "0");
+    assert.equal(
+      await originalCanvas.evaluate((element) => element === document.querySelector("canvas")),
+      true,
+    );
+    await capture("touch_replay_resets_campaign");
+  }
   if (!standardOnly) {
     if (prefix) await checkMembraneRecovery();
     else await checkPostCampaignLifecycle();
@@ -527,6 +560,8 @@ await writeFile(
     {
       mode: prefix ? "membrane-prefix" : "full-standard-reference",
       standardOnly,
+      touch,
+      touchRecoveryChecked,
       finished,
       wallSeconds: (Date.now() - started) / 1000,
       activeSeconds,

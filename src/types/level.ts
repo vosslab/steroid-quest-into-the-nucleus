@@ -9,7 +9,7 @@ export type Shape =
   | (Rect & { kind: "roundedRect"; radius: number });
 /** Inclusive phase range; omitted bounds are open. Progress starts at zero. */
 export type PhaseCondition = { encounterId: string; min?: number; max?: number };
-export type Motion = { radiusX: number; radiusY: number; period: number; phase?: number };
+type Motion = { radiusX: number; radiusY: number; period: number; phase?: number };
 export type Obstacle = {
   id: string;
   shape: Shape;
@@ -51,7 +51,7 @@ export type EncounterStep = { id: string; caption: string; label?: string } & (
   | { kind: "milestone"; milestone: BiologicalMilestone }
 );
 /** Order comes from the level's required encounter sequence, independent of position. */
-export type EncounterCheckpoint = { id: string; order: number; spawn: Point };
+type EncounterCheckpoint = { id: string; order: number; spawn: Point };
 export type Encounter = {
   id: string;
   objective: string;

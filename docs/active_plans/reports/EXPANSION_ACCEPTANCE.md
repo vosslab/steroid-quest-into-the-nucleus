@@ -9,7 +9,7 @@ cleanup, and plan archiving. Documentation, local delivery, and closure housekee
 No acceptance gate remains open.
 
 The approved [longer_cellular_journeys.md](../../archive/longer_cellular_journeys.md) supplies the gates;
-[EXPANSION_LEDGER.md](../EXPANSION_LEDGER.md) records milestone decisions. All acceptance uses
+[EXPANSION_LEDGER.md](../../archive/EXPANSION_LEDGER.md) records milestone decisions. All acceptance uses
 automated checks and fresh agent assessments. There is no human-availability gate.
 
 ## Frozen artifact

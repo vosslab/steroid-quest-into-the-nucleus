@@ -1,6 +1,6 @@
 # Expansion ledger
 
-This ledger tracks execution of [longer_cellular_journeys.md](../archive/longer_cellular_journeys.md).
+This ledger tracks execution of [longer_cellular_journeys.md](longer_cellular_journeys.md).
 The manager routes decisions and assigns fresh agents for implementation, correction, review, and
 acceptance. All gates use independent agent assessments or automated behavior tests; no milestone
 depends on human availability.
@@ -8,9 +8,9 @@ depends on human availability.
 | Milestone | Status | Dependency | Evidence |
 | --- | --- | --- | --- |
 | M1: Movement and authoring foundation | Complete; accepted | None | Fresh specification review and separate quality review both ACCEPT. D10 named-step correction is implemented and verified. Manager integration: 31 Node tests, types, lint, and format pass; build and two browser smokes pass. First-contact Right-key input: 2.8 simulation seconds / 3.06 wall seconds; screenshot: `test-results/expansion/m1/first_contact.png`. |
-| M2: Complete membrane expansion | Complete; accepted | M1 accepted | Fresh `expansion_m2_respec`, zoom `expansion_zoom_spec`, and `expansion_zoom_quality` ACCEPT. Actual-key reference runs 02 and 03 pass behavior and membrane pacing; run 03 closes corrected zoom presentation. See [EXPANSION_WALKTHROUGH.md](reports/EXPANSION_WALKTHROUGH.md). |
+| M2: Complete membrane expansion | Complete; accepted | M1 accepted | Fresh `expansion_m2_respec`, zoom `expansion_zoom_spec`, and `expansion_zoom_quality` ACCEPT. Actual-key reference runs 02 and 03 pass behavior and membrane pacing; run 03 closes corrected zoom presentation. See [EXPANSION_WALKTHROUGH.md](../active_plans/reports/EXPANSION_WALKTHROUGH.md). |
 | M3: Expand the campaign | Complete; accepted | M2 accepted | Frozen Cytoplasm 5, Envelope 3, Receptor 4, and DNA 5 (membrane 4) modules. Fresh cell/nucleus source specification reviews and final `expansion_m3_quality` ACCEPT: actual all-stage completion, all 21 immediate saves, legal shortcut rejoin, and rendered sticky contact/escape. |
-| M4: Autonomous acceptance | Complete; accepted | M3 accepted | Independent full campaign passes in 579.57 active seconds; reference 02 passes in 525.96 since Start / 525.02 net. Both meet 480-720 seconds with all six stages/21 required encounters and zero deaths/errors/drift. Recovery 06 passes all 12 required cases; final visual PASS. Final Python passes 1,139; diff clean. Fresh M4 specification, separate quality, and final integration ACCEPT. See [EXPANSION_ACCEPTANCE.md](reports/EXPANSION_ACCEPTANCE.md). |
+| M4: Autonomous acceptance | Complete; accepted | M3 accepted | Independent full campaign passes in 579.57 active seconds; reference 02 passes in 525.96 since Start / 525.02 net. Both meet 480-720 seconds with all six stages/21 required encounters and zero deaths/errors/drift. Recovery 06 passes all 12 required cases; final visual PASS. Final Python passes 1,139; diff clean. Fresh M4 specification, separate quality, and final integration ACCEPT. See [EXPANSION_ACCEPTANCE.md](../active_plans/reports/EXPANSION_ACCEPTANCE.md). |
 
 ## Readiness map
 
@@ -84,9 +84,9 @@ transition, encounter phases 6/6/6/5, and no errors, deaths, drift, or extra ani
 of 32 video frames confirms the destination/steroid remains visible through zoom and blend. Between
 runs 02 and 03, only `camera.ts` and renderer changed; simulation and content match, preserving run
 02's independent recovery evidence. Evidence and the historical clipping assessment are linked in
-[EXPANSION_WALKTHROUGH.md](reports/EXPANSION_WALKTHROUGH.md),
-[EXPANSION_MEMBRANE.md](reports/EXPANSION_MEMBRANE.md), and
-[EXPANSION_PRESENTATION_ASSESSMENT.md](reports/EXPANSION_PRESENTATION_ASSESSMENT.md); captures and
+[EXPANSION_WALKTHROUGH.md](../active_plans/reports/EXPANSION_WALKTHROUGH.md),
+[EXPANSION_MEMBRANE.md](../active_plans/reports/EXPANSION_MEMBRANE.md), and
+[EXPANSION_PRESENTATION_ASSESSMENT.md](../active_plans/reports/EXPANSION_PRESENTATION_ASSESSMENT.md); captures and
 reports are under `test-results/expansion/m2_reference_02`, `m2_reference_03`, and `zoom_quality`.
 At M2 close, 37 Node tests pass and full M4 gates remain open; the accepted M4 evidence below
 supersedes that intermediate status.
@@ -115,7 +115,7 @@ The independent actual-controls run completes all six stages and 21 required enc
 579.57 active seconds (9:39.57), with zero deaths, report/capture errors, or source/build/controller
 drift. Its 117 captures, video, raw summary, and provenance live under
 `test-results/expansion/independent_2026_10_09T17_51_00_905Z/`. See
-[EXPANSION_INDEPENDENT.md](reports/EXPANSION_INDEPENDENT.md).
+[EXPANSION_INDEPENDENT.md](../active_plans/reports/EXPANSION_INDEPENDENT.md).
 
 Reference 01 and recovery 02 reproduce an ER-junction overflight caused by the controller approach.
 The fresh route-helper correction uses the existing permanent physical descent without changing
@@ -146,11 +146,11 @@ inputs, five dist hashes, two independent controller hashes, all five live HTTP 
 required recovery cases, 18 retained M2 hashes, all nine archived temporary sources, empty
 `tests/_temp/`, and clean diff. No blocker or architecture drift remains. M1-M4 are complete.
 The approved plan is archived unchanged at
-[longer_cellular_journeys.md](../archive/longer_cellular_journeys.md); 11 current references are
+[longer_cellular_journeys.md](longer_cellular_journeys.md); 11 current references are
 updated, the former active path is absent, and the Git index is untouched. Archive/link cleanup
 passes 262 link/ASCII checks. Final source/build/preview remain unchanged. Closure housekeeping is
 complete; no acceptance gate remains open.
-[EXPANSION_ACCEPTANCE.md](reports/EXPANSION_ACCEPTANCE.md) tracks the aggregate gates.
+[EXPANSION_ACCEPTANCE.md](../active_plans/reports/EXPANSION_ACCEPTANCE.md) tracks the aggregate gates.
 
 D13 settles the transcription allocation: 10-20 seconds is a planning allocation, not a required
 minimum. Preserve the forgiving three-action transcription sequence and short existing finale;

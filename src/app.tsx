@@ -11,10 +11,13 @@ import type { GameEvent, GamePhase } from "./types/simulation";
 /** The canvas and runtime live for the component's entire lifetime. */
 export function App(): JSX.Element {
   let canvas!: HTMLCanvasElement;
+  let direction!: HTMLButtonElement;
+  let pulse!: HTMLButtonElement;
   let runtime: Runtime | undefined;
   let menu: HTMLElement | undefined;
   let captionTimeout: ReturnType<typeof setTimeout> | undefined;
   const [phase, setPhase] = createSignal<GamePhase>("title");
+  const [rotateRequired, setRotateRequired] = createSignal(false);
   const [stageIndex, setStageIndex] = createSignal(0);
   const [collected, setCollected] = createSignal(0);
   const [bound, setBound] = createSignal(false);
@@ -76,8 +79,12 @@ export function App(): JSX.Element {
 
   function play(action: "start" | "resume" | "retry" | "replay"): void {
     runtime?.[action]();
+    if (rotateRequired()) runtime?.pause();
     syncState();
-    canvas.focus();
+    if (overlay())
+      queueMicrotask(() => {
+        if (overlay()) menu?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+      });
   }
 
   function toggleSound(): void {
@@ -91,7 +98,8 @@ export function App(): JSX.Element {
     const currentPhase = phase();
     if (currentPhase === "title" || currentPhase === "paused" || currentPhase === "ended") {
       queueMicrotask(() => {
-        if (phase() === currentPhase) menu?.querySelector<HTMLButtonElement>("button")?.focus();
+        if (phase() === currentPhase)
+          menu?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
       });
     }
   });
@@ -104,7 +112,7 @@ export function App(): JSX.Element {
       return;
     }
     if (event.key !== "Tab" || !menu) return;
-    const buttons = menu.querySelectorAll<HTMLButtonElement>("button");
+    const buttons = menu.querySelectorAll<HTMLButtonElement>("button:not(:disabled)");
     const first = buttons[0];
     const last = buttons[buttons.length - 1];
     if (event.shiftKey && document.activeElement === first) {
@@ -117,7 +125,20 @@ export function App(): JSX.Element {
   }
 
   onMount(() => {
-    runtime = createRuntime({ canvas, levels: CAMPAIGN, onEvent: receiveEvent });
+    runtime = createRuntime({
+      canvas,
+      levels: CAMPAIGN,
+      onEvent: receiveEvent,
+      touchControls: { direction, pulse },
+    });
+    const portrait = window.matchMedia("(pointer: coarse) and (orientation: portrait)");
+    const orientationChanged = (): void => {
+      setRotateRequired(portrait.matches);
+      if (portrait.matches) runtime?.pause();
+    };
+    portrait.addEventListener("change", orientationChanged);
+    orientationChanged();
+    onCleanup(() => portrait.removeEventListener("change", orientationChanged));
     syncState();
   });
   onCleanup(() => {
@@ -183,7 +204,7 @@ export function App(): JSX.Element {
             </span>
             <button
               class="small-button"
-              onPointerDown={(event) => event.preventDefault()}
+              onMouseDown={(event) => event.preventDefault()}
               onClick={toggleSound}
               aria-pressed={!muted()}
               disabled={overlay()}
@@ -193,7 +214,7 @@ export function App(): JSX.Element {
             <button
               class="small-button"
               disabled={overlay()}
-              onPointerDown={(event) => event.preventDefault()}
+              onMouseDown={(event) => event.preventDefault()}
               onClick={() => {
                 runtime?.pause();
                 syncState();
@@ -203,160 +224,207 @@ export function App(): JSX.Element {
             </button>
           </div>
         </div>
-        <div class="viewport">
-          <canvas
-            ref={(element) => {
-              canvas = element;
-            }}
-            width="960"
-            height="540"
-            tabindex={overlay() ? -1 : 0}
-            aria-label="Steroid Quest game world. Arrow Left and Arrow Right steer. Space pulses upward; hold Space for upward thrust. Optional fine control: Arrow Up and Arrow Down provide gentle thrust."
-          />
-          <Show when={phase() === "title"}>
-            <section
+        <div class="play-area">
+          <div class="viewport">
+            <canvas
               ref={(element) => {
-                menu = element;
+                canvas = element;
               }}
-              class="overlay title-overlay"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="welcome-heading"
-              onKeyDown={containMenuFocus}
-            >
-              <div class="menu-card">
-                <p class="eyebrow">Small molecule. Big mission.</p>
-                <h2 id="welcome-heading">
-                  A cell awaits.
-                  <br />
-                  Make your way inside.
-                </h2>
-                <p class="intro">
-                  Cross the membrane, find your receptor,
-                  <br class="wide-only" /> and activate a gene.
-                </p>
-                <button class="primary-button" onClick={() => play("start")}>
-                  Start adventure <span aria-hidden="true">&#8594;</span>
-                </button>
-                <p class="session-note">
-                  Six stages &middot; Unlimited retries &middot; Optional fragments
-                </p>
-                <button class="text-button" onClick={toggleSound} aria-pressed={!muted()}>
-                  Sound {muted() ? "off" : "on"}
-                </button>
-                <div class="start-controls">
-                  <span>
-                    <kbd>Left</kbd>
-                    <kbd>Right</kbd> <b>Steer</b>
-                  </span>
-                  <span>
-                    <kbd>Space</kbd> <b>Pulse / hold to rise</b>
-                  </span>
-                  <span class="optional-controls">
-                    <kbd>Up</kbd>
-                    <kbd>Down</kbd> <b>Optional fine control</b>
-                  </span>
-                </div>
-              </div>
-            </section>
-          </Show>
-          <Show when={phase() === "paused"}>
-            <section
-              ref={(element) => {
-                menu = element;
-              }}
-              class="overlay"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="pause-heading"
-              onKeyDown={containMenuFocus}
-            >
-              <div class="menu-card compact">
-                <p class="eyebrow">Take a breath</p>
-                <h2 id="pause-heading">Journey paused</h2>
-                <p>Your checkpoint and fragments are safe.</p>
-                <p class="pause-controls">
-                  <kbd>Left</kbd>
-                  <kbd>Right</kbd> steer; <kbd>Space</kbd> pulse / hold to rise.
-                  <br />
-                  Optional fine control: <kbd>Up</kbd>
-                  <kbd>Down</kbd> gentle thrust.
-                </p>
-                <button class="primary-button" onClick={() => play("resume")}>
-                  Resume
-                </button>
-                <button class="secondary-button" onClick={() => play("retry")}>
-                  Retry checkpoint
-                </button>
-                <button class="text-button" onClick={toggleSound} aria-pressed={!muted()}>
-                  Sound {muted() ? "off" : "on"}
-                </button>
-              </div>
-            </section>
-          </Show>
-          <Show when={phase() === "ended"}>
-            <section
-              ref={(element) => {
-                menu = element;
-              }}
-              class="overlay ending-overlay"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="ending-heading"
-              onKeyDown={containMenuFocus}
-            >
-              <div class="menu-card compact">
-                <p class="eyebrow">Mission complete</p>
-                <h2 id="ending-heading">
-                  GENE EXPRESSION
-                  <br />
-                  ACTIVATED
-                </h2>
-                <p>The complex stays bound as an RNA transcript emerges.</p>
-                <div class="end-tally">
-                  <strong>
-                    {collected()} / {totalCollectibles}
-                  </strong>
-                  <span>fragments collected</span>
-                </div>
-                <p class="session-note">
-                  Journey time {Math.floor(elapsed() / 60)}:
-                  {String(Math.floor(elapsed() % 60)).padStart(2, "0")}
-                </p>
-                <button class="primary-button" onClick={() => play("replay")}>
-                  Replay
-                </button>
-              </div>
-            </section>
-          </Show>
-          <Show when={phase() === "recruiting"}>
-            <div class="recruitment-guide">
-              <Show
-                when={!transcriptionUnderway()}
-                fallback={
-                  <>
-                    <strong>Transcription underway</strong>
-                    <span>RNA polymerase is producing RNA.</span>
-                    <span class="recruitment-count">3 / 3 recruited</span>
-                  </>
-                }
+              width="960"
+              height="540"
+              tabindex={overlay() ? -1 : 0}
+              aria-label="Steroid Quest game world. Arrow Left and Arrow Right steer. Space pulses upward; hold Space for upward thrust. Optional fine control: Arrow Up and Arrow Down provide gentle thrust."
+            />
+            <Show when={phase() === "title"}>
+              <section
+                ref={(element) => {
+                  menu = element;
+                }}
+                class="overlay title-overlay"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="welcome-heading"
+                onKeyDown={containMenuFocus}
               >
-                <strong>Assemble the machinery</strong>
-                <span>Press Space when the marker enters the bright zone.</span>
-                <span class="recruitment-count">
-                  {recruitment()} / 3 recruited &middot; Miss? Try again.
-                </span>
-              </Show>
-            </div>
-          </Show>
-          <Show when={caption() && !overlay() && phase() !== "recruiting"}>
-            <p class="milestone" role="status">
-              {caption()}
-            </p>
-          </Show>
-          <Show when={phase() === "respawning"}>
-            <span class="respawn-label">Back to your checkpoint...</span>
-          </Show>
+                <div class="menu-card">
+                  <p class="eyebrow">Small molecule. Big mission.</p>
+                  <h2 id="welcome-heading">
+                    A cell awaits.
+                    <br />
+                    Make your way inside.
+                  </h2>
+                  <p class="intro">
+                    Cross the membrane, find your receptor,
+                    <br class="wide-only" /> and activate a gene.
+                  </p>
+                  <button class="primary-button" onClick={() => play("start")}>
+                    Start adventure <span aria-hidden="true">&#8594;</span>
+                  </button>
+                  <p class="session-note">
+                    Six stages &middot; Unlimited retries &middot; Optional fragments
+                  </p>
+                  <button class="text-button" onClick={toggleSound} aria-pressed={!muted()}>
+                    Sound {muted() ? "off" : "on"}
+                  </button>
+                  <div class="start-controls">
+                    <span>
+                      <kbd>Left</kbd>
+                      <kbd>Right</kbd> <b>Steer</b>
+                    </span>
+                    <span>
+                      <kbd>Space</kbd> <b>Pulse / hold to rise</b>
+                    </span>
+                    <span class="optional-controls">
+                      <kbd>Up</kbd>
+                      <kbd>Down</kbd> <b>Optional fine control</b>
+                    </span>
+                  </div>
+                </div>
+              </section>
+            </Show>
+            <Show when={phase() === "paused"}>
+              <section
+                ref={(element) => {
+                  menu = element;
+                }}
+                class="overlay"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="pause-heading"
+                onKeyDown={containMenuFocus}
+              >
+                <div class="menu-card compact">
+                  <p class="eyebrow">Take a breath</p>
+                  <h2 id="pause-heading">
+                    {rotateRequired() ? "Rotate to landscape" : "Journey paused"}
+                  </h2>
+                  <p>
+                    {rotateRequired()
+                      ? "Turn your device sideways, then tap Resume. Your progress is safe."
+                      : "Your checkpoint and fragments are safe."}
+                  </p>
+                  <p class="pause-controls">
+                    <kbd>Left</kbd>
+                    <kbd>Right</kbd> steer; <kbd>Space</kbd> pulse / hold to rise.
+                    <br />
+                    Optional fine control: <kbd>Up</kbd>
+                    <kbd>Down</kbd> gentle thrust.
+                  </p>
+                  <button
+                    class="primary-button"
+                    disabled={rotateRequired()}
+                    onClick={() => play("resume")}
+                  >
+                    Resume
+                  </button>
+                  <button class="secondary-button" onClick={() => play("retry")}>
+                    Retry checkpoint
+                  </button>
+                  <button class="text-button" onClick={toggleSound} aria-pressed={!muted()}>
+                    Sound {muted() ? "off" : "on"}
+                  </button>
+                </div>
+              </section>
+            </Show>
+            <Show when={phase() === "ended"}>
+              <section
+                ref={(element) => {
+                  menu = element;
+                }}
+                class="overlay ending-overlay"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="ending-heading"
+                onKeyDown={containMenuFocus}
+              >
+                <div class="menu-card compact">
+                  <p class="eyebrow">Mission complete</p>
+                  <h2 id="ending-heading">
+                    GENE EXPRESSION
+                    <br />
+                    ACTIVATED
+                  </h2>
+                  <p>The complex stays bound as an RNA transcript emerges.</p>
+                  <div class="end-tally">
+                    <strong>
+                      {collected()} / {totalCollectibles}
+                    </strong>
+                    <span>fragments collected</span>
+                  </div>
+                  <p class="session-note">
+                    Journey time {Math.floor(elapsed() / 60)}:
+                    {String(Math.floor(elapsed() % 60)).padStart(2, "0")}
+                  </p>
+                  <button class="primary-button" onClick={() => play("replay")}>
+                    Replay
+                  </button>
+                </div>
+              </section>
+            </Show>
+            <Show when={phase() === "recruiting"}>
+              <div class="recruitment-guide">
+                <Show
+                  when={!transcriptionUnderway()}
+                  fallback={
+                    <>
+                      <strong>Transcription underway</strong>
+                      <span>RNA polymerase is producing RNA.</span>
+                      <span class="recruitment-count">3 / 3 recruited</span>
+                    </>
+                  }
+                >
+                  <strong>Assemble the machinery</strong>
+                  <span>
+                    <span class="keyboard-copy">Press Space</span>
+                    <span class="touch-copy">Tap Pulse</span> when the marker enters the bright
+                    zone.
+                  </span>
+                  <span class="recruitment-count">
+                    {recruitment()} / 3 recruited &middot; Miss? Try again.
+                  </span>
+                </Show>
+              </div>
+            </Show>
+            <Show when={caption() && !overlay() && phase() !== "recruiting"}>
+              <p class="milestone" role="status">
+                {caption()}
+              </p>
+            </Show>
+            <Show when={phase() === "respawning"}>
+              <span class="respawn-label">Back to your checkpoint...</span>
+            </Show>
+          </div>
+          <div class="touch-controls" aria-label="Touch game controls">
+            <button
+              ref={(element) => {
+                direction = element;
+              }}
+              class="direction-pad"
+              aria-label="Direction pad: drag to steer"
+              disabled={overlay()}
+              tabindex="-1"
+            >
+              <span aria-hidden="true">
+                &#8593;
+                <br />
+                &#8592; &#8594;
+                <br />
+                &#8595;
+              </span>
+              <small>Drag to steer</small>
+            </button>
+            <button
+              ref={(element) => {
+                pulse = element;
+              }}
+              class="pulse-button"
+              aria-label="Pulse: tap or hold to rise"
+              disabled={overlay()}
+              tabindex="-1"
+            >
+              Pulse<small>Tap / hold</small>
+            </button>
+          </div>
         </div>
         <footer class="game-footer">
           <div class="progress-track" aria-label="Journey stages">

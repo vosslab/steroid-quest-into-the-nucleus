@@ -1,6 +1,7 @@
 /** Reference controller: actual keys and read-only canvas observations only. */
-export function createNavigation(page, canvas, trace) {
+export function createNavigation(page, canvas, trace, controls = page.keyboard) {
   const held = new Set();
+  const touch = controls !== page.keyboard;
   let lastPulse = 0;
   let lastTrace = -Infinity;
   let previousMode = "";
@@ -18,13 +19,13 @@ export function createNavigation(page, canvas, trace) {
       throw new Error(`Unapproved gameplay input for ${lane}: ${wanted.join(", ")}`);
     for (const key of held) {
       if (!wanted.includes(key)) {
-        await page.keyboard.up(key);
+        await controls.up(key);
         held.delete(key);
       }
     }
     for (const key of wanted) {
       if (!held.has(key)) {
-        await page.keyboard.down(key);
+        await controls.down(key);
         held.add(key);
       }
     }
@@ -101,10 +102,14 @@ export function createNavigation(page, canvas, trace) {
         await keys(
           ...(want > 10 ? ["ArrowRight"] : want < -10 ? ["ArrowLeft"] : []),
           ...(thrust && upward ? ["Space"] : []),
+          // Touch fine control can settle below a calm pocket after leaving a descent stream.
+          ...(touch && leg.y !== undefined && py < leg.y - 35 && Math.abs(vy) < 65
+            ? ["ArrowDown"]
+            : []),
         );
         let mode = held.size ? "steer" : "coast";
         if (leg.pulse && !thrust && upward && vy > -65 && Date.now() - lastPulse > 500) {
-          await page.keyboard.press("Space");
+          await controls.press("Space");
           lastPulse = Date.now();
           mode = "tap pulse";
         }

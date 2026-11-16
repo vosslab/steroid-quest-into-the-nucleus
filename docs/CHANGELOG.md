@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-11-15
+
+### Additions and New Features
+
+- Add coarse-pointer landscape touch steering with a 12 CSS pixel deadzone and a separate
+  Pulse button for tap impulse, held thrust, attachment escape and timed recruitment.
+- Add independent keyboard/touch composition, owned pointer capture and lifecycle cleanup;
+  keep pending quick taps until sampled and consume pulse only on the first catch-up step.
+- Add viewport/safe-area mobile layout with external controls and a full camera, portrait
+  rotation pause with explicit Resume, focused input/browser tests and actual-touch route proof.
+
+### Fixes and Maintenance
+
+- Preserve WebKit native HUD clicks by preventing compatibility mousedown focus instead of
+  cancelling pointerdown. Keep mobile menu sound targets at least 44 CSS pixels high.
+- Skip disabled Resume in portrait dialog focus and Tab containment; explicitly restore menu
+  focus after portrait Retry/Escape while runtime owns gameplay focus.
+- Document touch use and ownership in README, USAGE and SOLID_MODEL. Record acceptance and
+  exact artifact identities in the mobile plan/report; preserve existing dependency declarations.
+- Split the 957-line stylesheet into ordered base/mobile assets without changing CSS bytes; copy both through the canonical build and retain the complete camera layout.
+- Archive four completed plan ledgers, repair their relative links, and retain dated acceptance reports with a cleanup artifact-identity addendum.
+- Preserve compiler and campaign integration history by replacing deleted recipe-test links with the former path and dated test-prune notes.
+
+### Removals and Deprecations
+
+- Remove the unused init.ts build fallback and entry argument, eight internal-only exports, the redundant recipe test module and three helper-shape tests; narrow the campaign inventory test to authored biological guards.
+
+### Decisions and Failures
+
+- Initial npm ci could not write the home cache; the standard writable npm --cache option
+  restored the locked dependencies. No dependency declarations or lockfile changed.
+- Initial CDP helper passed remaining contacts on touchEnd, causing Chromium to release the
+  direction pointer. A real pointer-event probe established changed-contact behavior; the
+  corrected helper sends only the changed or lifted contact. Retain failed evidence separately.
+- A touch reference run reached a calm pocket above its next region and coasted at the correct
+  horizontal target. Let the touch-only controller use existing gentle Down input from vertical
+  error/velocity feedback; preserve the keyboard standard controller and all game source hashes.
+
+### Developer Tests and Notes
+
+- Cleanup passes codebase checks with 34 retained Node tests and the Pages build. Static checks confirm exact ordered CSS equivalence, copied assets and unchanged browser sources. Browser execution is excluded; historical campaign evidence remains tied to its recorded artifact.
 ## 2026-10-09
 
 ### Additions and New Features
